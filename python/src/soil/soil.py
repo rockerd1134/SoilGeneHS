@@ -27,18 +27,15 @@ np.random.seed(SEED)
 # DATA IMPORTING AND CLEANING
 # -----
 
-import pandas as pd
-
-import pandas as pd
-
-def merge_datasets(df1, df2, df1_id="...1", df2_id="Sample", new_id="sample"):
+def merge_datasets(df1, df2, df1_id=None, df2_id="Sample", new_id="sample"):
     """
     Merges two datasets on a specified identifier column and cleans up redundant columns.
+    If df1_id is None, the first unnamed column in df1 will be used by default.
 
     Parameters:
     - df1: The first DataFrame to merge (e.g., `stress_pca_psr`).
     - df2: The second DataFrame to merge (e.g., `stress`).
-    - df1_id: The column in `df1` to use for merging (default is '...1').
+    - df1_id: The column in `df1` to use for merging. If None, defaults to the first unnamed column.
     - df2_id: The column in `df2` to use for merging (default is 'Sample').
     - new_id: The name for the identifier column in the merged DataFrame (default is 'sample').
 
@@ -46,10 +43,15 @@ def merge_datasets(df1, df2, df1_id="...1", df2_id="Sample", new_id="sample"):
     - A merged DataFrame with a single identifier column.
     """
     
-    # Check if df1_id exists in df1 before renaming
-    if df1_id not in df1.columns:
-        raise ValueError(f"Column '{df1_id}' not found in the first DataFrame.")
-    
+    # If df1_id is not provided, use the first unnamed column in df1
+    if df1_id is None:
+        # Find the first unnamed column
+        unnamed_cols = [col for col in df1.columns if "Unnamed" in col]
+        if unnamed_cols:
+            df1_id = unnamed_cols[0]
+        else:
+            raise ValueError("No unnamed columns found in df1; please specify df1_id explicitly.")
+
     # Rename the specified identifier column in df1 to `new_id`.
     df1 = df1.rename(columns={df1_id: new_id})
 
@@ -65,12 +67,13 @@ def merge_datasets(df1, df2, df1_id="...1", df2_id="Sample", new_id="sample"):
     return merged_data
 
 
+
 # Load data (replace with appropriate path on your environment)
 data_dir = "./data"
 stress = pd.read_csv(f"{data_dir}/RKNGHStress.csv")
 stress_pca_psr = pd.read_csv(f"{data_dir}/RKNGHStressPCAPSR.csv")
 
-merged_data = merge_datasets(stress_pca_psr, stress)
+data = merge_datasets(stress_pca_psr, stress)
 
 # Clean and rename columns for consistency and readability.
 data.rename(columns={
@@ -153,13 +156,15 @@ def tune_fit(model_type, mode, scoring, data_split, formula, corr_thresh=None, v
 # -----
 
 # Example usage for logistic regression and random forest (classification)
-X, y = data.drop(columns="irrig"), data["irrig"]
+X = data.drop(columns="irrig")  # Features
+y = data["irrig"]               # Target variable
 
 # Logistic Regression (Lasso)
-lasso_model, lasso_params = tune_fit("lasso", "classification", make_scorer(f1_score), X, "irrig", verbose=True)
+lasso_model, lasso_params = tune_fit("lasso", "classification", make_scorer(f1_score), X, y, verbose=True)
 
-# Random Forest
-rf_model, rf_params = tune_fit("Random forest", "classification", make_scorer(roc_auc_score), X, "irrig", verbose=True)
+# Random Forest (Classification)
+rf_model, rf_params = tune_fit("Random forest", "classification", make_scorer(roc_auc_score), X, y, verbose=True)
+
 
 # Plotting ROC Curve for Classification Models
 plt.figure(figsize=(10, 6))
