@@ -6,17 +6,17 @@ Constraints:
 
 Subgoals:
 1. Finish implementing basic modeling in scikit-learn
-	a. Figure out why the existing elastic net model isn't getting good results. Probably have to do hyperparameter training from scratch instead of transferring in prior HPs.
-	b. Try to get as robust of a model as possible
+    1. Figure out why the existing elastic net model isn't getting good results. Probably have to do hyperparameter training from scratch instead of transferring in prior HPs.
+    2. Try to get as robust of a model as possible
 2. Implement feature selection methods to give a set of the top x wavebands
-	a. Filter methods: These are applied to the data based on its statistical properties. No modeling needed.
-		i. Correlation filter threshold?
-		ii. Chi-squared threshold? (This one suspect since it may be for categorical, not numerical data. Need to look into this)
-	b. Embedded methods: These use internal properties of the models themselves
-		i. Coefficients for elastic net
-	c. Wrapper methods: These are model-agnostic, and (according to a few sources) generally the most robust out of the three types.
-		i. Recursive feature elimination
-		ii. Permutation importance
+    1. Filter methods: These are applied to the data based on its statistical properties. No modeling needed.
+        1. Correlation filter threshold?
+        2. Chi-squared threshold? (This one suspect since it may be for categorical, not numerical data. Need to look into this)
+    2. Embedded methods: These use internal properties of the models themselves
+        1. Coefficients for elastic net
+    3. Wrapper methods: These are model-agnostic, and (according to a few sources) generally the most robust out of the three types.
+        1. Recursive feature elimination
+        2. Permutation importance
 3. Get a way to algorithmically find a consensus among the waveband sets from part 2
 4. Repeat part 1, but on the results of part 3
 5. Analyze results
