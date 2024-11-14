@@ -22,3 +22,6 @@ Subgoals:
 5. Analyze results
 6. Write up paper (doubles work for MLSC and for SoutheastCon)
 7. Create presentation
+
+Notes:
+- <https://scikit-learn.org/stable/auto_examples/compose/plot_compare_reduction.html#sphx-glr-auto-examples-compose-plot-compare-reduction-py> gives an example of hyperparameter searching over a pipeline, which is already what we need to do. But further, it even tests multiple dimensionality reduction methods simultaneously. Is this basically what we want? I still need to look into it.
