@@ -1,0 +1,52 @@
+---
+title: "RKNGH analysis"
+format: html
+---
+
+This is for analysis of the results in the RKNGH-hyperspectral feature importance study.
+
+```{r, warning = FALSE, message = FALSE}
+# Will be used for easier navigation within the directory structure
+here::i_am("r/analysis.qmd")
+
+library(here)
+library(rlang)
+library(readr)
+library(tidyverse)
+library(ggthemes)
+
+options(scipen = 9)
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+```{r}
+results <- read_csv(here("results/results.csv"), show_col_types = FALSE) |> 
+  mutate(
+    # Rename the genes to their proper names, and convert to factor
+    gene = case_when(
+      gene == "bact" ~ "16S rRNA",
+      gene == "cbblr" ~ "cbbLR",
+      gene == "fungi" ~ "18S rRNA",
+      gene == "phoa" ~ "phoA",
+      gene == "urec" ~ "ureC"
+    ) |> 
+      factor(levels = c("16S rRNA", "cbbLR", "18S rRNA", "phoA", "ureC"))
+    # Do the same for the methods
+    method = case_when(
+      method == "mi" ~ "Mutual information",
+      method == "coeffs" ~ "Model coefficients",
+      method == "cluster" ~ "Hierarchical clustering",
+      method == "perm_imp" ~ "Permutation importance",
+      method == "ga" ~ "Genetic algorithm"
+    )
+  ) #|> 
+  # mutate(
+  #   gene = factor(gene, levels = c("16S rRNA", "cbbLR", "18S rRNA", "phoA", "ureC")),
+  #   method = factor(method, levels = c("mi", "coeffs", "cluster", "perm_imp", "ga"))
+  # )
+```
+
+```{r}
+results
+```
+
