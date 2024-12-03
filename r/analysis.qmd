@@ -22,7 +22,7 @@ knitr::opts_chunk$set(cache = TRUE)
 ```
 
 ```{r}
-results <- read_csv(here("results/results.csv"), show_col_types = FALSE) |> 
+results <- read_csv(here("results/results_prelim.csv"), show_col_types = FALSE) |> 
   mutate(
     # Rename the genes to their proper names, and convert to factor
     gene = case_when(
