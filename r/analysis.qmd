@@ -42,9 +42,10 @@ results <- read_csv(here("results/results.csv"), show_col_types = FALSE) |>
       method == "cluster" ~ "Cluster",
       method == "perm_imp" ~ "PI",
       method == "ga" ~ "GA",
-      method == "consensus" ~ "Consensus (GA)"
+      method == "consensus" ~ "Consensus (GA)",
+      method == "baseline" ~ "Baseline"
     ) |> 
-      factor(levels = c("MI", "Coeffs", "Cluster", "PI", "GA", "Consensus (GA)")),
+      factor(levels = c("MI", "Coeffs", "Cluster", "PI", "GA", "Consensus (GA)", "Baseline")),
     # Make the RMSE non-negated
     rmse = rmse * -1,
     region = case_when(
@@ -190,23 +191,23 @@ These are based on the full results after running on SCINet. The main difference
 ```{r}
 # Look at the baseline scores
 results |> 
-  filter(is.na(Method) & is.na(Waveband)) |> 
+  filter(Method == "Baseline") |> 
   select(-Method, -Waveband)
 
 results |> 
-  filter(is.na(Method) & is.na(Waveband)) |> 
+  filter(Method == "Baseline") |> 
   select(-Method, -Waveband) |> 
   filter(Gene == '16S rRNA')
 
 results |> 
-  filter(is.na(Method) & is.na(Waveband)) |> 
+  filter(Method == "Baseline") |> 
   select(-Method, -Waveband) |> 
   filter(Gene == '18S rRNA')
 ```
 
 ```{r}
 results |> 
-  filter(is.na(Method) & is.na(Waveband)) |> 
+  filter(Method == "Baseline") |> 
   select(-Method, -Waveband) |> 
   ggplot() +
   geom_point(aes(x = Gene, y = RMSE, shape = Region), color = 'red', size = 3) +
@@ -216,7 +217,7 @@ results |>
   geom_hline(yintercept = 0)
 
 results |> 
-  filter(is.na(Method) & is.na(Waveband)) |> 
+  filter(Method == "Baseline") |> 
   select(-Method, -Waveband) |> 
   ggplot() +
   geom_point(aes(x = Gene, y = RMSE, shape = Region)) +
@@ -284,13 +285,13 @@ This is unexpected though. I thought (hoped) that the GA for all wavebands would
 ```{r}
 results |> 
   filter(Gene == '16S rRNA' & Region == 'Visible only') |> 
-  filter(Method == 'Coeffs' | Method == 'GA' | Method == 'Consensus (GA)' | is.na(Method)) |> 
+  filter(Method == 'Coeffs' | Method == 'GA' | Method == 'Consensus (GA)' | Method == "Baseline") |> 
   select(-Gene, -Region, -Waveband) |> 
   unique()
 
 results |> 
   filter(Gene == '16S rRNA' & Region == 'Visible only') |> 
-  filter(Method == 'Coeffs' | Method == 'GA' | Method == 'Consensus (GA)' | is.na(Method)) |> 
+  filter(Method == 'Coeffs' | Method == 'GA' | Method == 'Consensus (GA)' | Method == "Baseline") |> 
   select(-Gene, -Region, -Waveband) |> 
   unique() |> 
   pivot_longer(
