@@ -2,5 +2,5 @@ cache/
 .Rproj.user
 .Rhistory
 start.sh
-figures/prelim
+figures/prelim/
 r/analysis_prelim.qmd
