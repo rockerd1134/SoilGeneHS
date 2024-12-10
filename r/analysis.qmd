@@ -1,0 +1,334 @@
+---
+title: "RKNGH analysis"
+format: html
+---
+
+This is for analysis of the results in the RKNGH-hyperspectral feature importance study.
+
+# Setup
+
+```{r, warning = FALSE, message = FALSE}
+# Will be used for easier navigation within the directory structure
+here::i_am("r/analysis.qmd")
+
+library(here)
+library(rlang)
+library(readr)
+library(tidyverse)
+library(ggthemes)
+
+options(scipen = 9)
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+Some rows have a `NA` for `Method` and `Waveband`. These represent the baseline models, where no waveband selection methods were applied.
+
+```{r}
+results <- read_csv(here("results/results.csv"), show_col_types = FALSE) |> 
+  mutate(
+    # Rename the genes to their proper names, and convert to factor
+    gene = case_when(
+      gene == "bact" ~ "16S rRNA",
+      gene == "cbblr" ~ "cbbLR",
+      gene == "fungi" ~ "18S rRNA",
+      gene == "phoa" ~ "phoA",
+      gene == "urec" ~ "ureC"
+    ) |> 
+      factor(levels = c("16S rRNA", "cbbLR", "18S rRNA", "phoA", "ureC")),
+    # Do the same for the methods
+    method = case_when(
+      method == "mi" ~ "MI",
+      method == "coeffs" ~ "Coeffs",
+      method == "cluster" ~ "Cluster",
+      method == "perm_imp" ~ "PI",
+      method == "ga" ~ "GA",
+      method == "consensus" ~ "Consensus (GA)"
+    ) |> 
+      factor(levels = c("MI", "Coeffs", "Cluster", "PI", "GA", "Consensus (GA)")),
+    # Make the RMSE non-negated
+    rmse = rmse * -1,
+    region = case_when(
+      region == "vis" ~ "Visible only",
+      region == "all" ~ "All"
+    ) |> 
+      factor(levels = c("All", "Visible only"))
+  ) |> 
+  rename(
+    Gene = gene,
+    Method = method,
+    Waveband = wv,
+    RMSE = rmse,
+    Region = region,
+    R2 = r2,
+    MAE = mae
+  ) |> 
+  relocate(Gene, Region, Method, Waveband, RMSE, R2, MAE)
+```
+
+```{r}
+# The data here is calculated with respect to 
+data <- read_csv(here("data/data_consol.csv"), show_col_types = FALSE) |> 
+  pivot_longer(
+    cols = matches("^[0-9]+$"), # Selects all column names which are only integers
+    names_to = 'Waveband',
+    values_to = 'Intensity'
+  ) |> 
+  mutate(Waveband = parse_integer(Waveband))
+```
+
+This is for visualizing what region on the spectrum each wavelength is in:
+
+```{r}
+vis_light_colors <- binned_scale(
+  aesthetics = 'color',
+  #scale_name = 'stepsn',
+  palette = function(x) c('black', 'purple', 'blue', 'cyan', 'green', 'yellow', 'orange', 'red', 'black'),
+  breaks = c(380, 450, 485, 500, 565, 590, 625, 750),
+  labels = NULL,
+  limits = c(0, 2500),
+  show.limits = TRUE,
+  guide = 'none'
+)
+```
+
+# Data distribution
+
+This figure isn't good for the final paper, but it was okay for the preliminary presentation.
+
+```{r}
+# data |> 
+#   select(sample, Waveband, Intensity) |> 
+#   group_by(sample) |> 
+#   ggplot() +
+#   geom_line(aes(x = Waveband, y = Intensity, color = Waveband), linewidth = 0.25) +
+#   vis_light_colors +
+#   labs(title = "Data distribution", subtitle = "398 samples overplotted; visible light regions colorized")
+
+# ggsave(here("figures/data_dist.png"), device = "png", dpi = 300)
+```
+
+
+# Prelim figures
+
+Keeping the code for these as a reference for quicker reproduction
+
+## RMSE results
+
+```{r}
+# results |> 
+#   select(-Waveband) |> 
+#   unique() |> 
+#   ggplot() +
+#   geom_point(aes(x = Method, y = RMSE, fill = Gene), color = "black", size = 3, shape = 21) +
+#   geom_hline(yintercept = 1) +
+#   scale_fill_colorblind() +
+#   labs(title = "Method and gene vs. RMSE")
+
+# ggsave(here("figures/method_gene_rmse.png"), device = "png", dpi = 300)
+```
+
+```{r}
+# results |> 
+#   select(-Waveband) |> 
+#   unique() |> 
+#   group_by(Method) |> 
+#   summarize(mean_RMSE = mean(RMSE)) |> 
+#   ggplot() +
+#   geom_point(aes(x = Method, y = mean_RMSE), size = 3) +
+#   geom_hline(yintercept = 1) +
+#   labs(title = "Method vs. mean RMSE among all genes", y = "Mean RMSE")
+
+# ggsave(here("figures/method_mean_rmse.png"), device = "png", dpi = 300)
+```
+
+```{r}
+# results |> 
+#   select(-Waveband) |> 
+#   unique() |> 
+#   ggplot() +
+#   geom_point(aes(x = Method, y = RMSE, fill = Gene), color = "black", size = 3, shape = 21) +
+#   geom_hline(yintercept = 1) +
+#   scale_fill_colorblind() +
+#   facet_wrap(~ Gene) +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+#   labs(title = "Method and gene vs. RMSE")
+
+# ggsave(here("figures/method_gene_rmse_faceted.png"), device = "png", dpi = 300)
+```
+
+## Waveband selection results
+
+```{r}
+# results |> 
+#   select(-RMSE) |> 
+#   ggplot() +
+#   geom_point(aes(x = Waveband, y = Method, color = Waveband)) +
+#   facet_wrap(~ Gene) +
+#   vis_light_colors +
+#   labs(title = "Wavebands selected by each method, per gene")
+
+# ggsave(here("figures/method_gene_waveband.png"), device = "png", dpi = 300)
+```
+
+```{r}
+# results |> 
+#   select(-RMSE) |> 
+#   ggplot() +
+#   geom_histogram(aes(x = Waveband), bins = 210) +
+#   facet_wrap(~ Gene) +
+#   labs(title = "Histogram of wavebands selected per gene")
+
+# ggsave(here("figures/gene_waveband.png"), device = "png", dpi = 300)
+```
+
+# Analysis
+
+These are based on the full results after running on SCINet. The main differences with the above are the addition of region (visible light only or all wavebands), R2, and MAE.
+
+## Baseline
+
+```{r}
+# Look at the baseline scores
+results |> 
+  filter(is.na(Method) & is.na(Waveband)) |> 
+  select(-Method, -Waveband)
+
+results |> 
+  filter(is.na(Method) & is.na(Waveband)) |> 
+  select(-Method, -Waveband) |> 
+  filter(Gene == '16S rRNA')
+
+results |> 
+  filter(is.na(Method) & is.na(Waveband)) |> 
+  select(-Method, -Waveband) |> 
+  filter(Gene == '18S rRNA')
+```
+
+```{r}
+results |> 
+  filter(is.na(Method) & is.na(Waveband)) |> 
+  select(-Method, -Waveband) |> 
+  ggplot() +
+  geom_point(aes(x = Gene, y = RMSE, shape = Region), color = 'red', size = 3) +
+  geom_point(aes(x = Gene, y = MAE, shape = Region), color = 'blue', size = 3) +
+  geom_point(aes(x = Gene, y = R2, shape = Region), color = 'violet', size = 3) +
+  geom_hline(yintercept = 1) +
+  geom_hline(yintercept = 0)
+
+results |> 
+  filter(is.na(Method) & is.na(Waveband)) |> 
+  select(-Method, -Waveband) |> 
+  ggplot() +
+  geom_point(aes(x = Gene, y = RMSE, shape = Region)) +
+  geom_hline(yintercept = 1)
+```
+
+
+Whoa, using visible light only actually *decreased* the error for 16S in comparison with using the entire spectrum. This is a big result for the paper, and it should be emphasized in the manuscript.
+
+18S did very poorly, as the previous paper and this project's preliminary tests suggested. It looks like the hyperspectral-18S pattern just isn't there.
+
+Looks like ureC also did better with vis only, just like 16S. Still underwhelming results there, though. Also underwhelming for phoA and cbbLR.
+
+## 16S
+
+```{r}
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  select(-Waveband) |> 
+  ggplot() +
+  geom_point(aes(x = Method, y = RMSE, shape = Region)) +
+  geom_hline(yintercept = 1)
+```
+
+Clustering was totally ineffective for 16S within the visible light region only, and since PI was based on the clustering, it failed too.
+
+It looks like GA had essentially the same results in both cases, which is really interesting. Maybe they both converged to the same results? Look into this.
+
+For the other methods, the vis only results were pretty conclusively better than the all results.
+
+Also, the coeffs, GA, and consensus vis results were all about the same as the baseline, which also needs looking into.
+
+### GA
+
+```{r}
+results |> 
+  filter(Gene == '16S rRNA' & Method == 'GA') |> 
+  select(-Waveband) |> 
+  unique()
+```
+
+Yeah, their metrics were essentially identical. The minute differences might just be due to the stochastic algorithm.
+
+```{r}
+results |> 
+  filter(Gene == '16S rRNA' & Method == 'GA') |>
+  select(Region, Waveband) |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = Region, color = Waveband)) +
+  vis_light_colors
+
+results |> 
+  filter(Gene == '16S rRNA' & Method == 'GA') |> 
+  filter(Waveband >= 400 & Waveband <= 700) |> 
+  select(Region, Waveband) |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = Region, color = Waveband)) +
+  vis_light_colors
+```
+
+This is unexpected though. I thought (hoped) that the GA for all wavebands would have converged to basically the same wavebands as visible only, but that's not the case. Unless, maybe the elastic net validation model for vis assigned weights of about 0 to all the picks that didn't line up? Check back on this.
+
+### Near-equal RMSEs
+
+```{r}
+results |> 
+  filter(Gene == '16S rRNA' & Region == 'Visible only') |> 
+  filter(Method == 'Coeffs' | Method == 'GA' | Method == 'Consensus (GA)' | is.na(Method)) |> 
+  select(-Gene, -Region, -Waveband) |> 
+  unique()
+
+results |> 
+  filter(Gene == '16S rRNA' & Region == 'Visible only') |> 
+  filter(Method == 'Coeffs' | Method == 'GA' | Method == 'Consensus (GA)' | is.na(Method)) |> 
+  select(-Gene, -Region, -Waveband) |> 
+  unique() |> 
+  pivot_longer(
+    cols = c(RMSE, R2, MAE),
+    names_to = 'Metric',
+    values_to = 'Value') |> 
+  mutate(Metric = factor(Metric, levels = c('RMSE', 'MAE', 'R2'))) |> 
+  ggplot() +
+  geom_point(aes(x = Method, y = Value, color = Metric)) +
+  scale_color_colorblind() +
+  facet_wrap(~ Metric, scales = 'free')
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
