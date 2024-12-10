@@ -1,3 +1,5 @@
+**TODO: Modify this readme once the manuscript is done, and change it to something more descriptive**
+
 Project objective: Get a (robust as possible) subset of the most important wavebands for predicting soil gene abundance values.
 
 Constraints:
