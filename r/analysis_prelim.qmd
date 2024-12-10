@@ -9,7 +9,7 @@ This is for analysis of the results in the RKNGH-hyperspectral feature importanc
 
 ```{r, warning = FALSE, message = FALSE}
 # Will be used for easier navigation within the directory structure
-here::i_am("r/analysis.qmd")
+here::i_am("r/analysis_prelim.qmd")
 
 library(here)
 library(rlang)
@@ -98,7 +98,7 @@ data |>
   vis_light_colors +
   labs(title = "Data distribution", subtitle = "398 samples overplotted; visible light regions colorized")
 
-# ggsave(here("figures/data_dist.png"), device = "png", dpi = 300)
+# ggsave(here("figures/prelim/data_dist.png"), device = "png", dpi = 300)
 ```
 
 
@@ -114,7 +114,7 @@ results |>
   scale_fill_colorblind() +
   labs(title = "Method and gene vs. RMSE")
 
-# ggsave(here("figures/method_gene_rmse.png"), device = "png", dpi = 300)
+# ggsave(here("figures/prelim/method_gene_rmse.png"), device = "png", dpi = 300)
 ```
 
 Emphasis here: Method vs. gene effect on RMSE, but easier to compare among genes than faceting
@@ -131,7 +131,7 @@ results |>
   geom_hline(yintercept = 1) +
   labs(title = "Method vs. mean RMSE among all genes", y = "Mean RMSE")
 
-# ggsave(here("figures/method_mean_rmse.png"), device = "png", dpi = 300)
+# ggsave(here("figures/prelim/method_mean_rmse.png"), device = "png", dpi = 300)
 ```
 
 Emphasis above: Overall performance of each method
@@ -149,7 +149,7 @@ results |>
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   labs(title = "Method and gene vs. RMSE")
 
-# ggsave(here("figures/method_gene_rmse_faceted.png"), device = "png", dpi = 300)
+# ggsave(here("figures/prelim/method_gene_rmse_faceted.png"), device = "png", dpi = 300)
 ```
 
 Emphasis above: different genes just have different results. Some do better, some do worse.
@@ -165,7 +165,7 @@ results |>
   vis_light_colors +
   labs(title = "Wavebands selected by each method, per gene")
 
-# ggsave(here("figures/method_gene_waveband.png"), device = "png", dpi = 300)
+# ggsave(here("figures/prelim/method_gene_waveband.png"), device = "png", dpi = 300)
 ```
 
 Emphasis above: Grouping by both gene and method, also showing the disparity in number of wavebands selected
@@ -178,7 +178,7 @@ results |>
   facet_wrap(~ Gene) +
   labs(title = "Histogram of wavebands selected per gene")
 
-# ggsave(here("figures/gene_waveband.png"), device = "png", dpi = 300)
+# ggsave(here("figures/prelim/gene_waveband.png"), device = "png", dpi = 300)
 ```
 
 Emphasis above: showing the distribution, especially when the points in the plot above overlap
