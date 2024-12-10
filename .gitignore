@@ -1,6 +1,6 @@
-cache/
 .Rproj.user
 .Rhistory
 start.sh
 figures/prelim/
 r/analysis_prelim.qmd
+results/results_temp.qmd
