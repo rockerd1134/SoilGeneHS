@@ -40,7 +40,7 @@ results <- read_csv(here("results/results.csv"), show_col_types = FALSE) |>
       method == "mi" ~ "MI",
       method == "coeffs" ~ "Coeffs",
       method == "cluster" ~ "Cluster",
-      method == "perm_imp" ~ "PI",
+      method == "pi" ~ "PI",
       method == "ga" ~ "GA",
       method == "consensus" ~ "Consensus (GA)",
       method == "baseline" ~ "Baseline"
@@ -61,9 +61,12 @@ results <- read_csv(here("results/results.csv"), show_col_types = FALSE) |>
     RMSE = rmse,
     Region = region,
     R2 = r2,
-    MAE = mae
+    MAE = mae,
+    Penalty = penalty,
+    Ratio = ratio,
+    Coefficient = coeff
   ) |> 
-  relocate(Gene, Region, Method, Waveband, RMSE, R2, MAE)
+  relocate(Gene, Region, Method, Penalty, Ratio, Waveband, Coefficient, RMSE, R2, MAE)
 ```
 
 ```{r}
@@ -111,7 +114,7 @@ This figure isn't good for the final paper, but it was okay for the preliminary 
 
 # Prelim figures
 
-Keeping the code for these as a reference for quicker reproduction
+Keeping the code for these temporarily as a reference for quicker reproduction
 
 ## RMSE results
 
@@ -192,23 +195,27 @@ These are based on the full results after running on SCINet. The main difference
 # Look at the baseline scores
 results |> 
   filter(Method == "Baseline") |> 
-  select(-Method, -Waveband)
+  select(-Method, -Waveband, -Coefficient) |> 
+  unique()
 
 results |> 
   filter(Method == "Baseline") |> 
-  select(-Method, -Waveband) |> 
-  filter(Gene == '16S rRNA')
+  select(-Method, -Waveband, -Coefficient) |> 
+  filter(Gene == '16S rRNA') |> 
+  unique()
 
 results |> 
   filter(Method == "Baseline") |> 
-  select(-Method, -Waveband) |> 
-  filter(Gene == '18S rRNA')
+  select(-Method, -Waveband, -Coefficient) |> 
+  filter(Gene == '18S rRNA') |> 
+  unique()
 ```
 
 ```{r}
 results |> 
   filter(Method == "Baseline") |> 
-  select(-Method, -Waveband) |> 
+  select(-Method, -Waveband, -Coefficient) |> 
+  unique() |> 
   ggplot() +
   geom_point(aes(x = Gene, y = RMSE, shape = Region), color = 'red', size = 3) +
   geom_point(aes(x = Gene, y = MAE, shape = Region), color = 'blue', size = 3) +
@@ -218,7 +225,8 @@ results |>
 
 results |> 
   filter(Method == "Baseline") |> 
-  select(-Method, -Waveband) |> 
+  select(-Method, -Waveband, -Coefficient) |> 
+  unique() |> 
   ggplot() +
   geom_point(aes(x = Gene, y = RMSE, shape = Region)) +
   geom_hline(yintercept = 1)
@@ -236,6 +244,14 @@ Looks like ureC also did better with vis only, just like 16S. Still underwhelmin
 ```{r}
 results |> 
   filter(Gene == '16S rRNA') |> 
+  select(-Waveband, -Coefficient) |> 
+  unique()
+```
+
+
+```{r}
+results |> 
+  filter(Gene == '16S rRNA') |> 
   select(-Waveband) |> 
   ggplot() +
   geom_point(aes(x = Method, y = RMSE, shape = Region)) +
@@ -244,22 +260,24 @@ results |>
 
 Clustering was totally ineffective for 16S within the visible light region only, and since PI was based on the clustering, it failed too.
 
-It looks like GA had essentially the same results in both cases, which is really interesting. Maybe they both converged to the same results? Look into this.
+It looks like GA had very similar results in both cases, which is really interesting. Maybe they both converged to the same results? Look into this.
 
 For the other methods, the vis only results were pretty conclusively better than the all results.
 
-Also, the coeffs, GA, and consensus vis results were all about the same as the baseline, which also needs looking into.
+Also, the coeffs, GA, and consensus vis results were all similar to the baseline, which also needs looking into.
+
+Keep in mind for this whole paper: the consensus method chose far fewer wavebands than the other methods were programmed to or tended to, so naturally the consensus validation model error was a bit higher. The most important thing for consensus is the relative importances assigned via coeffs to the wavebands it chose.
 
 ### GA
 
 ```{r}
 results |> 
   filter(Gene == '16S rRNA' & Method == 'GA') |> 
-  select(-Waveband) |> 
+  select(-Waveband, -Coefficient) |> 
   unique()
 ```
 
-Yeah, their metrics were essentially identical. The minute differences might just be due to the stochastic algorithm.
+Yeah, their metrics were very close. The minute differences might just be due to the stochastic algorithm.
 
 ```{r}
 results |> 
@@ -276,42 +294,207 @@ results |>
   ggplot() +
   geom_point(aes(x = Waveband, y = Region, color = Waveband)) +
   vis_light_colors
+
+results |> 
+  filter(Gene == '16S rRNA' & Method == 'GA') |> 
+  filter(Waveband >= 400 & Waveband <= 700) |> 
+  select(Region, Waveband, Coefficient) |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = Coefficient, color = Region)) +
+  geom_hline(yintercept = 0) +
+  scale_color_colorblind()
 ```
 
-This is unexpected though. I thought (hoped) that the GA for all wavebands would have converged to basically the same wavebands as visible only, but that's not the case. Unless, maybe the elastic net validation model for vis assigned weights of about 0 to all the picks that didn't line up? Check back on this.
+This is unexpected though. I thought (hoped) that the GA for all wavebands would have converged to basically the same wavebands as visible only, but that's not the case. I thought maybe the elastic net validation model for vis assigned weights of about 0 to all the picks that didn't line up, but it doesn't look like that's the case either. It might have just been a coincidence, then, although that's a really unsatisfying answer. If there's time later, come back and look into this more.
 
-### Near-equal RMSEs
+### Waveband selection results
 
 ```{r}
 results |> 
-  filter(Gene == '16S rRNA' & Region == 'Visible only') |> 
-  filter(Method == 'Coeffs' | Method == 'GA' | Method == 'Consensus (GA)' | Method == "Baseline") |> 
-  select(-Gene, -Region, -Waveband) |> 
-  unique()
+  filter(Gene == '16S rRNA') |>
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  facet_wrap(~ Region, scales = 'free')
 
 results |> 
-  filter(Gene == '16S rRNA' & Region == 'Visible only') |> 
-  filter(Method == 'Coeffs' | Method == 'GA' | Method == 'Consensus (GA)' | Method == "Baseline") |> 
-  select(-Gene, -Region, -Waveband) |> 
-  unique() |> 
-  pivot_longer(
-    cols = c(RMSE, R2, MAE),
-    names_to = 'Metric',
-    values_to = 'Value') |> 
-  mutate(Metric = factor(Metric, levels = c('RMSE', 'MAE', 'R2'))) |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'All') |> 
+  filter(Waveband >= 400 & Waveband <= 700) |> 
   ggplot() +
-  geom_point(aes(x = Method, y = Value, color = Metric)) +
-  scale_color_colorblind() +
-  facet_wrap(~ Metric, scales = 'free')
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  labs(title = '16S all, but restricted to same range as visible light only') +
+  scale_x_continuous(breaks = seq(400, 700, 20))
+
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'Visible only') |> 
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  labs(title = '16S vis') +
+  scale_x_continuous(breaks = seq(400, 700, 20))
 ```
 
+Not much agreement here overall. There's some in the ballpark of 580-600, and 670-690 for large peaks, and smaller peaks of agreement around 410, 430-440, 500-510, 540, and 610-620.
 
+But this was WRT all methods, focusing on vis-all differences. Are there any patterns among the methods?
 
+```{r}
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method == 'Cluster' | Method == 'PI')
 
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  select(Region, Method, RMSE) |> 
+  unique() |> 
+  ggplot() +
+  geom_point(aes(x = Method, y = RMSE, color = Region), size = 3) +
+  scale_color_colorblind() +
+  geom_hline(yintercept = 1)
 
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method != 'Baseline' & Method != 'PI' & Method != 'Cluster') |> 
+  ggplot() +
+  geom_freqpoly(aes(x = Waveband, color = Method, after_stat(ncount)), binwidth = 10, linewidth = 2, alpha = 0.75) +
+  scale_color_colorblind() +
+  scale_x_continuous(breaks = seq(400, 700, 10))
 
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method != 'Baseline' & Method != 'PI' & Method != 'Cluster') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = Method, color = Waveband), size = 3, alpha = 0.5) +
+  vis_light_colors +
+  scale_x_continuous(breaks = seq(400, 700, 10))
 
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  select(Waveband, Coefficient) |> 
+  mutate(
+    abs_coeff = abs(Coefficient),
+    scaled_coeff = Coefficient / max(Coefficient),
+    scaled_abs_coeff = abs_coeff / max(abs_coeff)) |> 
+  arrange(abs_coeff |> desc()) |> 
+  rowid_to_column(var = 'rank')
 
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  select(Waveband, Coefficient) |> 
+  mutate(
+    abs_coeff = abs(Coefficient),
+    scaled_coeff = Coefficient / max(Coefficient),
+    scaled_abs_coeff = abs_coeff / max(abs_coeff)) |> 
+  arrange(abs_coeff |> desc()) |> 
+  rowid_to_column(var = 'rank') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = 16-rank, color = Waveband), size = 3) +
+  scale_x_continuous(breaks = seq(400, 700, 10)) +
+  vis_light_colors
+
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  select(Waveband, Coefficient) |> 
+  mutate(
+    abs_coeff = abs(Coefficient),
+    scaled_coeff = Coefficient / max(Coefficient),
+    scaled_abs_coeff = abs_coeff / max(abs_coeff)) |> 
+  arrange(abs_coeff |> desc()) |> 
+  rowid_to_column(var = 'rank') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = scaled_coeff, color = Waveband), size = 3) +
+  geom_hline(yintercept = 0) +
+  scale_x_continuous(breaks = seq(400, 700, 10)) +
+  vis_light_colors
+```
+
+Cluster and PI are overlapping pretty hard, but we already knew that since PI is built on clustering results. Wait, it looks like the reason they both did so terribly on vis only is they only chose two wavebands, so of course it would do way worse. But that also indicates that after omitting those two from consideration, visible only outperformed all across the board.
+
+For visible only, MI clearly preferred the red light. Unfortunately, it wasn't among the best methods based on validation results. 
+
+Coeffs, GA, and consensus all thought around 440, exactly 509, around 535, and (exactly) 590 was important. The region from 665-670 was also relatively important to all, but especially MI. Around 600 was important particularly to MI, but also coeffs (not that much for GA or consensus).
+
+As far as the consensus was concerned, the 3 most important wavebands were all orange light. Green and yellow also did okay. Surprisingly, red wasn't that important to that method.
+
+```{r}
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'All') |> 
+  filter(Method != 'Baseline' & Method != 'PI' & Method != 'Cluster') |> 
+  ggplot() +
+  geom_freqpoly(aes(x = Waveband, color = Method, after_stat(ncount)), binwidth = 10, linewidth = 2, alpha = 0.75) +
+  scale_color_colorblind() +
+  scale_x_continuous(breaks = seq(350, 2500, 50))
+
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'All') |> 
+  filter(Method != 'Baseline' & Method != 'PI' & Method != 'Cluster') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = Method, color = Waveband), size = 3, alpha = 0.5) +
+  vis_light_colors +
+  scale_x_continuous(breaks = seq(350, 2500, 50))
+
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  select(Waveband, Coefficient) |> 
+  mutate(
+    abs_coeff = abs(Coefficient),
+    scaled_coeff = Coefficient / max(Coefficient),
+    scaled_abs_coeff = abs_coeff / max(abs_coeff)) |> 
+  arrange(abs_coeff |> desc()) |> 
+  rowid_to_column(var = 'rank')
+
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  select(Waveband, Coefficient) |> 
+  mutate(
+    abs_coeff = abs(Coefficient),
+    scaled_coeff = Coefficient / max(Coefficient),
+    scaled_abs_coeff = abs_coeff / max(abs_coeff)) |> 
+  arrange(abs_coeff |> desc()) |> 
+  rowid_to_column(var = 'rank') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = 16-rank, color = Waveband), size = 3) +
+  scale_x_continuous(breaks = seq(350, 2500, 50)) +
+  vis_light_colors
+
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  select(Waveband, Coefficient) |> 
+  mutate(
+    abs_coeff = abs(Coefficient),
+    scaled_coeff = Coefficient / max(Coefficient),
+    scaled_abs_coeff = abs_coeff / max(abs_coeff)) |> 
+  arrange(abs_coeff |> desc()) |> 
+  rowid_to_column(var = 'rank') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = scaled_coeff, color = Waveband), size = 3) +
+  geom_hline(yintercept = 0) +
+  scale_x_continuous(breaks = seq(350, 2500, 50)) +
+  vis_light_colors
+```
+
+When considering all, the red focus shifts to around 725 (all methods). But there's a good amount of energy from MI, GA, and coeff around 1450, and there's a very large spike from around 1875-1975 with all four methods contributing some.
+
+The consensus method had a strong preference for infrared wavebands, especially around 1900-1950.
+
+When comparing the magnitude of consensus validation model coefficients between vis and all, vis had a much larger magnitude of its coeffs. I'm not sure to what extent that matters here, though.
 
 
 
