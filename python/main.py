@@ -8,6 +8,7 @@ import git
 import numpy as np
 import pandas as pd
 import random
+import pickle
 
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import KFold
@@ -112,7 +113,7 @@ wvs_vis = np.arange(400,701)
 # In[4]:
 
 
-elastic_net = ElasticNet(fit_intercept=False, warm_start=True, random_state=0, selection='random', max_iter=4000)
+elastic_net = ElasticNet(fit_intercept=False, warm_start=True, random_state=0, selection='random', max_iter=8000)
 
 # Used for embedded feature importance (via coeffs) and wrapper feature importance (via perm importance)
 pipe_elastic_net = Pipeline(
@@ -120,7 +121,6 @@ pipe_elastic_net = Pipeline(
         ("scaler", StandardScaler()),
         ("elastic_net", elastic_net)
     ],
-    # memory = root+'\\cache',
     verbose=False
 )
 
@@ -137,7 +137,7 @@ PARAM_GRID = [
 
 # **The baseline models (for comparison)**
 
-# In[ ]:
+# In[5]:
 
 
 def baseline(X_train, y_train, X_test):
@@ -148,12 +148,12 @@ def baseline(X_train, y_train, X_test):
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
     print('Done.')
-    return preds
+    return preds, model
 
 
-# **Feature selection functions**
+# **The feature selection functions**
 
-# In[ ]:
+# In[6]:
 
 
 # Since this is only with respect to X_train, not any of the target variables, this only has to be computed once. (It's relatively cheap to compute, but this also has the benefit of preserving the random choices.)
@@ -176,14 +176,15 @@ def cluster(X_train, region):
     return cluster_choices
 
 
-# In[ ]:
+# In[7]:
 
 
 # Go ahead and call this once.
 cluster_choices_all = cluster(X_all_train, "all")
 cluster_choices_vis = cluster(X_vis_train, "vis")
 
-# In[ ]:
+
+# In[8]:
 
 
 def mi(X_train, y_train, region, n_features=64):
@@ -197,7 +198,7 @@ def mi(X_train, y_train, region, n_features=64):
         return wvs_vis[top_n_idx]
 
 
-# In[ ]:
+# In[9]:
 
 
 def train_elastic_net(X_train, y_train):
@@ -208,7 +209,7 @@ def train_elastic_net(X_train, y_train):
     return grid.best_estimator_
 
 
-# In[ ]:
+# In[10]:
 
 
 def coeffs(estimator, region, n_features=64):
@@ -222,7 +223,7 @@ def coeffs(estimator, region, n_features=64):
         return wvs_vis[top_n_idx]
 
 
-# In[ ]:
+# In[11]:
 
 
 def ga(X_train, y_train, trained_estimator, wv_subset, n_features=64):
@@ -251,8 +252,7 @@ def ga(X_train, y_train, trained_estimator, wv_subset, n_features=64):
         [
             ("scaler", StandardScaler()),
             ("ga", ga_selector)
-        ], 
-        # memory = root+'\\cache',
+        ],
         verbose=False
     )
     
@@ -262,10 +262,10 @@ def ga(X_train, y_train, trained_estimator, wv_subset, n_features=64):
     return wv_subset[feats]
 
 
-# In[ ]:
+# In[12]:
 
 
-def perm_imp(X_train, y_train, region, n_features=64):
+def pi(X_train, y_train, region, n_features=64):
     """ Calculates permutation importance on a dataset. cluster_choices should be the result of calling cluster(), which should be done once at the start of execution. 
     This is done outside this function to preserve the random selection. Returns the set of n_features wavebands with the highest permutation importance on the training set. (Wrapper method) """
     # Use only the features selected by clustering
@@ -283,27 +283,26 @@ def perm_imp(X_train, y_train, region, n_features=64):
             ("scaler", StandardScaler()),
             ("elastic_net", elastic_net)
         ], 
-        # memory = root+'\\cache',
         verbose=False
     )    
     grid = GridSearchCV(estimator=pipe, param_grid=PARAM_GRID, scoring='neg_root_mean_squared_error', n_jobs=-1, cv=cv_5_0, error_score='raise')
     grid.fit(X_train, y_train)
-    perm_imp = permutation_importance(grid, X_train, y_train, scoring='neg_root_mean_squared_error', n_repeats=10, n_jobs=-1, random_state=0)
+    pi = permutation_importance(grid, X_train, y_train, scoring='neg_root_mean_squared_error', n_repeats=10, n_jobs=-1, random_state=0)
     # Needed in case fewer than the threshold were chosen by the method
-    n = min(perm_imp.importances_mean.shape[0], n_features)
-    pi_top_n_idx = np.argpartition(perm_imp.importances_mean, -n)[-n:]
+    n = min(pi.importances_mean.shape[0], n_features)
+    pi_top_n_idx = np.argpartition(pi.importances_mean, -n)[-n:]
     return cluster_choices[pi_top_n_idx]
 
 
 # **Consensus function**
 
-# In[ ]:
+# In[13]:
 
 
 def consensus(X_train, y_train, region, n_features_intermed=64, max_features_output=16):
     """ Takes the wavebands output by the feature selection functions and uses a (separate) genetic algorithm to find the wavebands that give the lowest RMSE on an elastic net model.
     The subset will be at most n_features large, but it may be less than n_features large.
-    Returns the tuple: (wv_mi, wv_coeffs, wv_ga, wv_cluster, wv_perm_imp, wv_consensus), where each is a numpy array of wavebands that were selected by each method. """
+    Returns the tuple: (wv_mi, wv_coeffs, wv_ga, wv_cluster, wv_pi, wv_consensus), where each is a numpy array of wavebands that were selected by each method. """
     
     if(region == "all"):
         wv_subset = wvs # Used for GA
@@ -323,14 +322,14 @@ def consensus(X_train, y_train, region, n_features_intermed=64, max_features_out
     wv_ga = ga(X_train, y_train, trained_pipe, wv_subset, n_features=n_features_intermed)
     print('Done.')
     print('\tStarting permutation importance...', end=' ')
-    wv_perm_imp = perm_imp(X_train, y_train, region, n_features=n_features_intermed)
+    wv_pi = pi(X_train, y_train, region, n_features=n_features_intermed)
     print('Done.')
 
     # Compile the above results into one array, remove any duplicates, and sort.
     wv_intermed = np.append(wv_mi, wv_coeffs)
     wv_intermed = np.append(wv_intermed, wv_ga)
     wv_intermed = np.append(wv_intermed, wv_cluster)
-    wv_intermed = np.append(wv_intermed, wv_perm_imp)
+    wv_intermed = np.append(wv_intermed, wv_pi)
     wv_intermed = np.sort(np.unique(wv_intermed))
 
     # Convert the above into indices for masking over the dataset.
@@ -344,24 +343,27 @@ def consensus(X_train, y_train, region, n_features_intermed=64, max_features_out
     print('\tStarting genetic algorithm...', end=' ')
     wv_consensus = ga(X_train, y_train, trained_pipe, wv_intermed, n_features=max_features_output)
     print('\tDone.')
-    return (wv_mi, wv_coeffs, wv_ga, wv_cluster, wv_perm_imp, wv_consensus)
+    return (wv_mi, wv_coeffs, wv_ga, wv_cluster, wv_pi, wv_consensus)
 
 
 # **The "main" function**
 
-# In[ ]:
+# In[14]:
 
 
 # Would normally be in the main function, but defined separately for easier testing, debugging, and analysis after running within a Jupyter notebook.
 def run():
     # Lists of results that will be compiled at the end into a DataFrame for writing to CSV
-    region_list = []
-    gene_list = []
-    method_list = []
-    wv_list = []
-    rmse_list = []
-    r2_list = []
-    mae_list = []
+    region_list = [] # "all" or "vis"
+    gene_list = [] # "bact", "fungi", etc.
+    method_list = [] # "mi", "coeffs", etc.
+    wv_list = [] # The (int) wavebands selected/considered
+    coeff_list = [] # The fitted coefficients for each of the above wavebands (no intercept was calculated)
+    penalty_list = [] # The regularization penalty for the model
+    ratio_list = [] # The l1-l2 ratio for the model
+    rmse_list = [] # The RMSE score for the model
+    r2_list = [] # The R2 score for the model
+    mae_list = [] # The MAE score for the model
 
     # Loop over both the whole waveband range and visible light only. (Making the loop in this format in case there are any other regions we want to add later.)
     # Swapped order to vis first, then all, for fail-fast testing
@@ -372,11 +374,13 @@ def run():
             X_test = X_all_test
             X_phoa_train = X_all_phoa_train
             X_phoa_test = X_all_phoa_test
+            region_set = wvs
         elif(starting_region == "vis"):
             X_train = X_vis_train
             X_test = X_vis_test
             X_phoa_train = X_vis_phoa_train
             X_phoa_test = X_vis_phoa_test
+            region_set = wvs_vis
             
         # Loop over each gene (y value)
         for gene, y_train, y_test in zip(("phoa", "cbblr", "fungi", "bact", "urec"), (phoa_train, cbblr_train, fungi_train, bact_train, urec_train), (phoa_test, cbblr_test, fungi_test, bact_test, urec_test)):
@@ -385,38 +389,42 @@ def run():
 
             # Build a baseline model on the entire region of consideration (no waveband selection methods used) for comparison, and record results
             if(gene == "phoa"):
-                baseline_preds = baseline(X_phoa_train, y_train, X_phoa_test)
-                rmse = root_mean_squared_error(y_test, baseline_preds) * -1
-                r2 = r2_score(y_test, baseline_preds)
-                mae = mean_absolute_error(y_test, baseline_preds)
-                region_list.append(starting_region)
-                gene_list.append(gene)
-                method_list.append("baseline")
-                wv_list.append(np.nan) # No wavebands were selected here; all were used
-                rmse_list.append(rmse)
-                r2_list.append(r2)
-                mae_list.append(mae)
+                baseline_preds, baseline_model = baseline(X_phoa_train, y_train, X_phoa_test)
             else:
-                baseline_preds = baseline(X_train, y_train, X_test)
-                rmse = root_mean_squared_error(y_test, baseline_preds) * -1
-                r2 = r2_score(y_test, baseline_preds)
-                mae = mean_absolute_error(y_test, baseline_preds)
+                baseline_preds, baseline_model = baseline(X_train, y_train, X_test)
+            model = baseline_model.best_estimator_['elastic_net']
+            penalty = model.alpha
+            ratio = model.l1_ratio
+            coeffs = model.coef_
+            rmse = root_mean_squared_error(y_test, baseline_preds) * -1
+            r2 = r2_score(y_test, baseline_preds)
+            mae = mean_absolute_error(y_test, baseline_preds)
+
+            # Record each waveband/coeff separately, in tidy format for easier analysis
+            for i, wv in enumerate(region_set):
                 region_list.append(starting_region)
                 gene_list.append(gene)
                 method_list.append("baseline")
-                wv_list.append(np.nan) # No wavebands were selected here; all were used
+                wv_list.append(wv)
+                coeff_list.append(coeffs[i])
+                penalty_list.append(penalty)
+                ratio_list.append(ratio)
                 rmse_list.append(rmse)
                 r2_list.append(r2)
                 mae_list.append(mae)
+            # Pickle the model
+            model_path = root + '//cache/' + starting_region + "_" + gene + "_baseline.pickle"
+            with open(model_path, 'wb') as file:
+                pickle.dump(model, file)
 
             # Where the main calculations happen. Runs each method separately, and then finds the consensus of all of them.
             # The phoa special case is due to a different train/test split than the rest because of some NANs.
             if(gene == "phoa"):
-                wv_mi, wv_coeffs, wv_ga, wv_cluster, wv_perm_imp, wv_consensus = consensus(X_phoa_train, y_train, starting_region)
+                wv_mi, wv_coeffs, wv_ga, wv_cluster, wv_pi, wv_consensus = consensus(X_phoa_train, y_train, starting_region)
             else:
-                wv_mi, wv_coeffs, wv_ga, wv_cluster, wv_perm_imp, wv_consensus = consensus(X_train, y_train, starting_region)
+                wv_mi, wv_coeffs, wv_ga, wv_cluster, wv_pi, wv_consensus = consensus(X_train, y_train, starting_region)
             
-            for method, wv_set in zip(("mi", "coeffs", "ga", "cluster", "perm_imp", "consensus"), (wv_mi, wv_coeffs, wv_ga, wv_cluster, wv_perm_imp, wv_consensus)):
+            for method, wv_set in zip(("mi", "coeffs", "ga", "cluster", "pi", "consensus"), (wv_mi, wv_coeffs, wv_ga, wv_cluster, wv_pi, wv_consensus)):
                 
                 # Build a new elastic net model for validation on this subset of wavebands
                 if(starting_region == "all"):
@@ -428,25 +436,31 @@ def run():
                 if(gene == "phoa"):
                     validator.fit(X_phoa_train[:,wv_set_idx], y_train)
                     preds = validator.predict(X_phoa_test[:,wv_set_idx])
-                    rmse = root_mean_squared_error(y_test, preds) * -1
-                    r2 = r2_score(y_test, preds)
-                    mae = mean_absolute_error(y_test, preds)
                 else:
                     validator.fit(X_train[:,wv_set_idx], y_train)
                     preds = validator.predict(X_test[:,wv_set_idx])
-                    rmse = root_mean_squared_error(y_test, preds) * -1
-                    r2 = r2_score(y_test, preds)
-                    mae = mean_absolute_error(y_test, preds)
-    
-                # Record each waveband separately. This is difficult to analyze visually, but makes for MUCH easier analysis in R later.
-                for wv in wv_set:
+                model = validator.best_estimator_['elastic_net']
+                penalty = model.alpha
+                ratio = model.l1_ratio
+                coeffs = model.coef_
+                rmse = root_mean_squared_error(y_test, preds) * -1
+                r2 = r2_score(y_test, preds)
+                mae = mean_absolute_error(y_test, preds)
+
+                for i, wv in enumerate(wv_set):
                     region_list.append(starting_region)
                     gene_list.append(gene)
                     method_list.append(method)
                     wv_list.append(wv)
+                    coeff_list.append(coeffs[i])
+                    penalty_list.append(penalty)
+                    ratio_list.append(ratio)
                     rmse_list.append(rmse)
                     r2_list.append(r2)
                     mae_list.append(mae)
+                model_path = root + '//cache/' + starting_region + "_" + gene + "_" + method + ".pickle"
+                with open(model_path, 'wb') as file:
+                    pickle.dump(model, file)
                     
             print("Finished ", gene, ".", sep = "")
 
@@ -459,6 +473,9 @@ def run():
     results['gene'] = gene_list
     results['method'] = method_list
     results['wv'] = wv_list
+    results['coeff'] = coeff_list
+    results['penalty'] = penalty_list
+    results['ratio'] = ratio_list
     results['rmse'] = rmse_list
     results['r2'] = r2_list
     results['mae'] = mae_list
@@ -466,7 +483,7 @@ def run():
     print("Done.")
 
 
-# In[ ]:
+# In[15]:
 
 
 run()
