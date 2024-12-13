@@ -189,7 +189,7 @@ Keeping the code for these temporarily as a reference for quicker reproduction
 
 These are based on the full results after running on SCINet. The main differences with the above are the addition of region (visible light only or all wavebands), R2, and MAE.
 
-## Baseline
+## Baseline (all genes)
 
 ```{r}
 # Look at the baseline scores
@@ -494,15 +494,73 @@ When considering all, the red focus shifts to around 725 (all methods). But ther
 
 The consensus method had a strong preference for infrared wavebands, especially around 1900-1950.
 
-When comparing the magnitude of consensus validation model coefficients between vis and all, vis had a much larger magnitude of its coeffs. I'm not sure to what extent that matters here, though.
+When comparing the magnitude of consensus validation model coefficients between vis and all, vis had a much larger magnitude of its coeffs. I'm not sure to what extent that matters here, though. 
 
+Update: I thought about it, and I think that's just a function of the number of variables in each model. If both models (all and vis) are trying to predict values in the ballpark of 10, for instance, vis has way fewer wavebands, so they'll have overall higher magnitudes. And vice versa for all. Even though y was scaled (Check this if putting this point in paper or presentation!), the same argument applies.
 
+### Baseline (16S)
 
+```{r}
+results |> 
+  filter(Method == 'Baseline') |> 
+  filter(Gene == '16S rRNA') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = Coefficient, color = Waveband)) +
+  geom_hline(yintercept = 0) +
+  vis_light_colors +
+  facet_wrap(~ Region, scales = 'free') +
+  labs(title = '16S baseline coefficients')
 
+results |> 
+  filter(Method == 'Baseline') |> 
+  filter(Gene == '16S rRNA') |> 
+  ggplot() +
+  geom_line(aes(x = Waveband, y = Coefficient, color = Waveband)) +
+  geom_hline(yintercept = 0) +
+  vis_light_colors +
+  facet_wrap(~ Region, scales = 'free') +
+  labs(title = '16S baseline coefficients')
+```
 
+Looking at the baseline model coefficients for 16S, both all and vis only, since these were among the best overall (and most important since they're for 16S). 16S vis baseline is the most important overall.
 
+One of the key patterns to look for is regions with high oscillation vs pretty steady changes. For instance, look at the red light in vis only for a steady rate of change, or the middle IR section in all. But one interesting pattern going on is that the wavebands with the highest coefficients are in high oscillation areas. I'll need to think on the implications there. Especially in vis light for the purples, what does it mean when one of the highest peaks is right next to the global min?
 
+## 18S
 
+```{r}
+results |> 
+  filter(Method == 'Baseline') |> 
+  filter(Gene == '16S rRNA' | Gene == '18S rRNA') |> 
+  ggplot() +
+  geom_line(aes(x = Waveband, y = Coefficient, color = Waveband)) +
+  geom_hline(yintercept = 0) +
+  vis_light_colors +
+  facet_wrap(Gene ~ Region, scales = 'free') +
+  labs(title = '16S and 18S baseline coefficients')
+```
+
+Wait, I just wanted to compare some good baseline models to bad baseline models. If 18S baseline looks like this, maybe that explains why it's so bad? It looks like it chose L1 penalty over L2.
+
+```{r}
+results |> 
+  filter(Method == 'Baseline') |> 
+  filter(Gene == '18S rRNA' | Gene == '16S rRNA') |> 
+  select(Region, Gene, Penalty, Ratio) |> 
+  unique()
+
+results |> 
+  filter(Method == 'Baseline') |> 
+  filter(Gene == '18S rRNA') |> 
+  select(Region, Waveband, Coefficient) |> 
+  mutate(
+    zero_coeff = near(Coefficient, 0.0)
+  ) |> 
+  group_by(Region) |> 
+  count(zero_coeff)
+```
+
+Yeah the vast majority of the baseline models for 18S had zero coefficients. But they went through the exact same model training + tuning process as the other ones, and this gave the best results for cross validation, so it's still valid. It's always possible that 18S's poor overall performance is just due to random chance with this train/test split, but that's always the case for any ML thing like this.
 
 
 
