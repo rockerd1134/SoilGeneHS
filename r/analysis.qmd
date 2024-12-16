@@ -562,7 +562,21 @@ results |>
 
 Yeah the vast majority of the baseline models for 18S had zero coefficients. But they went through the exact same model training + tuning process as the other ones, and this gave the best results for cross validation, so it's still valid. It's always possible that 18S's poor overall performance is just due to random chance with this train/test split, but that's always the case for any ML thing like this.
 
+```{r}
+results |> 
+  filter(Gene == 'cbbLR') |> 
+  ggplot() +
+  geom_hline(yintercept = 0) +
+  geom_line(aes(x = Waveband, y = Coefficient, color = Waveband)) +
+  facet_wrap(~Region + Method, scales = 'free') +
+  vis_light_colors
+```
 
+```{r}
+results |> 
+  group_by(Gene, Region, Method) |> 
+  count()
+```
 
 
 
