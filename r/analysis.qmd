@@ -578,7 +578,287 @@ results |>
   count()
 ```
 
+## Waveband selection results (consolidated)
 
+Some of this is copied from the above.
+
+### Validation metrics
+
+These are for comparison, particularly when considering what the consensus method for each gene ranked the best wavebands. If the consensus validation metrics were WAY worse than the others, the rankings should be taken with a grain of salt. All the consensus validation metrics are somewhat worse, but this is somewhat expected: removing features is going to reduce the amount of info in the dataset, increasing prediction error. This is slightly alleviated by the high correlation among wavebands in this data, but the variables aren't completely redundant.
+
+Also going with RMSE for the visualizations here, but that's somewhat arbitrary. As shown below, RMSE and MAE are very highly correlated (intuitively). Ignoring the negative correlation (which is obvious and expected) between RMSE/MAE and R2, the correlation strength is not as strong, but it's still expected due to the bias/variance tradeoff.
+
+```{r}
+results_no_wv <- results |> 
+  select(-Waveband, -Coefficient) |> 
+  unique()
+
+cor(results_no_wv$RMSE, results_no_wv$R2)
+cor(results_no_wv$RMSE, results_no_wv$MAE)
+cor(results_no_wv$R2, results_no_wv$MAE)
+```
+
+
+```{r}
+results_no_wv |> 
+  ggplot() +
+  geom_point(aes(x = Method, y = RMSE, shape = Region)) +
+  geom_hline(yintercept = 1) +
+  facet_wrap(~ Gene, scales = 'free') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+results_no_wv |> 
+  ggplot() +
+  geom_point(aes(x = Method, y = R2, shape = Region)) +
+  geom_hline(yintercept = 0) +
+  facet_wrap(~ Gene, scales = 'free') +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Consensus choices
+
+#### Visible
+
+```{r}
+results |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  facet_wrap(~ Gene) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'Vis only, consensus'
+  ) +
+  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+results |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  #facet_wrap(~ Gene) +
+  labs(
+    title = 'Wavebands selected for all genes',
+    subtitle = 'Vis only, consensus'
+  ) +
+  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+results |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  ggplot() +
+  geom_freqpoly(aes(x = Waveband, color = Gene), binwidth = 10) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'Vis only, consensus'
+  ) +
+  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_color_colorblind()
+```
+
+Maybe when reporting, discuss clusters, rounded to the nearest 10s place? Approx values below (go back later and correct with exact wavebands chosen):
+
+For 16S: 510, 540, **590**, 620
+Overall: **620**, **640**, 510, 540, 580, 670, 700 (but especially in the 540-640 range)
+
+#### All
+
+```{r}
+results |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  facet_wrap(~ Gene) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'All wv, consensus'
+  ) +
+  scale_x_continuous(breaks = seq(350, 2500, 100)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  #facet_wrap(~ Gene) +
+  labs(
+    title = 'Wavebands selected for 16S only',
+    subtitle = 'All wv, consensus'
+  ) +
+  scale_x_continuous(breaks = seq(350, 2500, 100)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+results |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  #facet_wrap(~ Gene) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'All wv, consensus'
+  ) +
+  scale_x_continuous(breaks = seq(350, 2500, 100)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+results |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  ggplot() +
+  geom_freqpoly(aes(x = Waveband, color = Gene), binwidth = 10) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'All wv, consensus'
+  ) +
+  scale_x_continuous(breaks = seq(350, 2500, 100)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_color_colorblind()
+
+results |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(Waveband < 1250) |> 
+  ggplot() +
+  #geom_freqpoly(aes(x = Waveband, color = Gene), binwidth = 10) +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'All wv, consensus (part 1)'
+  ) +
+  scale_x_continuous(breaks = seq(350, 1250, 10)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_color_colorblind()
+
+results |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(Waveband >= 1250 & Waveband < 1850) |> 
+  ggplot() +
+  #geom_freqpoly(aes(x = Waveband, color = Gene), binwidth = 10) +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'All wv, consensus (part 2)'
+  ) +
+  scale_x_continuous(breaks = seq(1250, 1850, 10)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_color_colorblind()
+
+results |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(Waveband >= 1850) |> 
+  ggplot() +
+  #geom_freqpoly(aes(x = Waveband, color = Gene), binwidth = 10) +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'All wv, consensus (part 3)'
+  ) +
+  scale_x_continuous(breaks = seq(1850, 2500, 10)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_color_colorblind()
+```
+
+For 16S: most important from 1900-1950, but others relatively spread out
+Overall: **350**, **475-550**
+
+### Baseline coeffs
+
+The somewhat arbitrary threshold of the top 17 features is because ureC has only 17 nonzero coefficients.
+
+```{r}
+results |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method == 'Baseline') |> 
+  mutate(abs_coeff = abs(Coefficient)) |> 
+  group_by(Gene) |>
+  slice_max(n = 17, order_by = abs_coeff, na_rm = TRUE) |> 
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  facet_wrap(~ Gene) +
+  labs(
+    title = 'Baseline highest abs coeffs',
+    subtitle = 'Vis only'
+  ) +
+  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+results |> 
+  filter(Region == 'Visible only') |> 
+  filter(Method == 'Baseline') |> 
+  mutate(abs_coeff = abs(Coefficient)) |> 
+  group_by(Gene) |>
+  slice_max(n = 17, order_by = abs_coeff, na_rm = TRUE) |> 
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  #facet_wrap(~ Gene) +
+  labs(
+    title = 'Baseline highest abs coeffs',
+    subtitle = 'Vis only'
+  ) +
+  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+```{r}
+results |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Baseline') |> 
+  mutate(abs_coeff = abs(Coefficient)) |> 
+  group_by(Gene) |>
+  slice_max(n = 17, order_by = abs_coeff, na_rm = TRUE) |> 
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  facet_wrap(~ Gene) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'All wv, overall'
+  ) +
+  scale_x_continuous(breaks = seq(350, 2500, 100)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+results |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Baseline') |> 
+  mutate(abs_coeff = abs(Coefficient)) |> 
+  group_by(Gene) |>
+  slice_max(n = 17, order_by = abs_coeff, na_rm = TRUE) |>  
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  #facet_wrap(~ Gene) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'All wv, overall'
+  ) +
+  scale_x_continuous(breaks = seq(350, 2500, 100)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+results |> 
+  filter(Region == 'All') |> 
+  filter(Method == 'Baseline') |> 
+  mutate(abs_coeff = abs(Coefficient)) |> 
+  group_by(Gene) |>
+  slice_max(n = 17, order_by = abs_coeff, na_rm = TRUE) |>  
+  ggplot() +
+  geom_freqpoly(aes(x = Waveband, color = Gene), binwidth = 10) +
+  labs(
+    title = 'Wavebands selected for each gene',
+    subtitle = 'All wv, overall'
+  ) +
+  scale_x_continuous(breaks = seq(350, 2500, 100)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  scale_color_colorblind()
+```
+
+##
 
 
 
