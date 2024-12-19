@@ -976,6 +976,7 @@ results |>
 ```{r}
 results |> 
   filter(Method == 'Consensus (GA)') |> 
+  filter(!near(Coefficient, 0)) |>
   ggplot() +
   geom_histogram(aes(x = Waveband), binwidth = 10) +
   facet_grid(rows = vars(Gene), cols = vars(Region), scales = 'free_x') +
@@ -1014,6 +1015,7 @@ I prefer the histogram version of this. Main idea: what wavebands tended to be r
 ```{r}
 results |>
   filter(Method == 'Consensus (GA)') |>
+  filter(!near(Coefficient, 0)) |>
   ggplot() +
   geom_histogram(aes(x = Waveband), binwidth = 10) +
   facet_wrap(~ Region, scales = 'free_x') +
@@ -1044,5 +1046,108 @@ I like the faceted single plots, but they don't allow for as detailed labels on 
 This shows more of the important patterns, although there's still not a blindingly clear pattern.
 
 I'm very hesitant to recommend specific wavebands down to the nanometer-level precision. At that level, any variation might be more due to noise or stochastic algorithm choices than an actual signal in the data. For instance, 500 is probably essentially identical to 501, so even if both happen to be recommended, practically speaking, it should only count as one waveband. Also, depending on how the bins are calculated behind the scenes for the histogram, they might be in different bins.
+
+# Tabular analysis of waveband selections
+
+Going in afterwards and looking at the more precise wavebands for the sake of the writeup. The bins here might not match up with the histograms in terms of offsets, but they're good enough to know where to zoom in later.
+
+```{r}
+results |>
+  filter(Region == 'Visible only') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(!near(Coefficient, 0)) |>
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  #facet_wrap(~ Region, scales = 'free_x')
+  scale_x_continuous(breaks = seq(400, 700, 10))
+
+results |>
+  filter(Region == 'All') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(!near(Coefficient, 0)) |>
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  #facet_wrap(~ Region, scales = 'free_x') +
+  labs(x = 'Waveband (nm)', y = 'Count') +
+  scale_x_continuous(breaks = seq(400, 2500, 100))
+
+results |>
+  select(Gene, Region, Method, Waveband, Coefficient) |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(!near(Coefficient, 0)) |>
+  mutate(
+    bin = (Waveband %/% 10) * 10
+  ) |> 
+  count(bin)
+
+results |>
+  select(Gene, Region, Method, Waveband, Coefficient) |> 
+  filter(Method == 'Consensus (GA)') |>
+  filter(!near(Coefficient, 0)) |>
+  mutate(
+    bin = (Waveband %/% 10) * 10
+  ) |>
+  filter(bin > 900 & bin < 1100) |> 
+  arrange(Waveband)
+
+results |>
+  select(Gene, Region, Method, Waveband, Coefficient) |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(!near(Coefficient, 0)) |>
+  mutate(
+    bin = (Waveband %/% 10) * 10
+  ) |>
+  filter(bin > 1400 & bin < 1650) |> 
+  arrange(Waveband)
+
+results |>
+  select(Gene, Region, Method, Waveband, Coefficient) |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(!near(Coefficient, 0)) |> 
+  mutate(
+    bin = (Waveband %/% 10) * 10
+  ) |>
+  filter(bin > 1850 & bin < 1950) |> 
+  arrange(Waveband)
+
+results |>
+  select(Gene, Region, Method, Waveband, Coefficient) |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(!near(Coefficient, 0)) |> 
+  mutate(
+    bin = (Waveband %/% 10) * 10
+  ) |>
+  filter(bin > 1950 & bin < 2150) |> 
+  arrange(Waveband)
+```
+
+Methodology for analysis here:
+Ignore wavebands with coeffs near 0; their validation model found them unimportant even though the consensus GA selected them.
+Ignore wavebands not near any other selections.
+Take the floor of each waveband selected for analysis (i.e., replace the ones digit with 0)
+Prioritize 16S results, clusters of bins among genes, and runs of bins with the same gene.
+
+Activity at:
+970 (phoA, ureC, 16S)
+1430 (phoA)
+1530-1540 (cbbLR, ureC)
+1620 (cbbLR, 16S)
+1880-1940 (16S)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
