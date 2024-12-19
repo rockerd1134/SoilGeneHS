@@ -858,13 +858,184 @@ results |>
   scale_color_colorblind()
 ```
 
-##
+# Final figures
 
+```{r}
+# results |> 
+#   select(Gene, Region, Method, RMSE, R2, MAE) |> 
+#   unique() |> 
+#   ggplot() +
+#   geom_point(aes(x = RMSE, y = R2, shape = Gene, color = Method), size = 3) +
+#   geom_vline(xintercept = 1) +
+#   geom_hline(yintercept = 0) +
+#   #scale_color_colorblind() +
+#   facet_wrap(~ Region)
+```
 
+This is TMI. There don't appear to be any big surprises in terms of the relationship among RMSE and R2, so it's probably best to just plot one error metric (RMSE probably) and make note of the others if necessary.
 
+```{r}
+# results |> 
+#   select(Gene, Region, Method, RMSE) |> 
+#   unique() |> 
+#   ggplot() +
+#   geom_point(aes(x = Gene, y = RMSE, fill = Method), shape = 21, color = 'black', size = 3) +
+#   scale_fill_colorblind() +
+#   #scale_fill_brewer(palette = 'Dark2') +
+#   facet_wrap(~ Region) +
+#   geom_hline(yintercept = 1) +
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
+results |> 
+  select(Gene, Region, Method, RMSE) |> 
+  unique() |> 
+  ggplot() +
+  geom_point(aes(x = Method, y = RMSE, fill = Gene), shape = 21, color = 'black', size = 3) +
+  scale_fill_colorblind() +
+  #scale_fill_brewer(palette = 'Dark2') +
+  facet_wrap(~ Region) +
+  geom_hline(yintercept = 1) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
+ggsave(here("figures/method_gene_rmse.png"), device = "png", dpi = 300)
+```
 
+I like this last figure. There is some occlusion, but overall it works for communicating what method did better for what gene/region. Playing with alpha to address the occlusion just made the plot look worse. Just make sure to adjust the geom_point size as needed for the figure size.
 
+Models of note: 16S baseline vis (lowest RMSE overall), 16S consensus vis (insight into important features)
+
+16S baseline vis coefficients:
+
+```{r}
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Method == 'Baseline') |> 
+  filter(Region == 'Visible only') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = Coefficient)) +
+  geom_hline(yintercept = 0) +
+  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = 'Waveband (nm)')
+
+ggsave(here("figures/bact_baseline_vis_coeffs_bw.png"), device = "png", dpi = 300)
+
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Method == 'Baseline') |> 
+  filter(Region == 'Visible only') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = Coefficient, color = Waveband)) +
+  geom_hline(yintercept = 0) +
+  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  vis_light_colors +
+  labs(x = 'Waveband (nm)')
+
+ggsave(here("figures/bact_baseline_vis_coeffs_color.png"), device = "png", dpi = 300)
+```
+
+Not sure which of these is the best. It's the same information throughout though. Decided for points because the line looks bad and is misleading on the consensus coeffs below.
+
+I think black/white better for paper, but color might be good in a presentation.
+
+```{r}
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(Region == 'Visible only') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = Coefficient)) +
+  geom_hline(yintercept = 0) +
+  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  labs(x = 'Waveband (nm)')
+
+ggsave(here("figures/bact_consensus_vis_coeffs_bw.png"), device = "png", dpi = 300)
+
+results |> 
+  filter(Gene == '16S rRNA') |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(Region == 'Visible only') |> 
+  ggplot() +
+  geom_point(aes(x = Waveband, y = Coefficient, color = Waveband)) +
+  geom_hline(yintercept = 0) +
+  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  vis_light_colors +
+  labs(x = 'Waveband (nm)')
+
+ggsave(here("figures/bact_consensus_vis_coeffs_color.png"), device = "png", dpi = 300)
+```
+
+```{r}
+results |> 
+  filter(Method == 'Consensus (GA)') |> 
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  facet_grid(rows = vars(Gene), cols = vars(Region), scales = 'free_x') +
+  labs(x = 'Waveband (nm)', y = 'Count')
+
+ggsave(here("figures/consensus_histogram_gene.png"), device = "png", dpi = 300)
+
+# results |> 
+#   filter(Method == 'Consensus (GA)') |> 
+#   ggplot() +
+#   geom_point(aes(x = Waveband, y = Gene)) +
+#   facet_wrap(~ Region, scales = 'free_x')
+
+# results |> 
+#   filter(Method == 'Consensus (GA)') |> 
+#   filter(Region == 'Visible only') |> 
+#   ggplot() +
+#   geom_histogram(aes(x = Waveband), binwidth = 10) +
+#   scale_x_continuous(breaks = seq(400, 700, 20)) +
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+#   facet_wrap(~ Gene)
+
+# results |> 
+#   filter(Method == 'Consensus (GA)') |> 
+#   filter(Region == 'All') |> 
+#   ggplot() +
+#   geom_histogram(aes(x = Waveband), binwidth = 10) +
+#   scale_x_continuous(breaks = seq(350, 2500, 200)) +
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+#   facet_wrap(~ Gene)
+```
+
+I prefer the histogram version of this. Main idea: what wavebands tended to be ranked important for each gene by the consensus method. But what about consolidating results among genes?
+
+```{r}
+results |>
+  filter(Method == 'Consensus (GA)') |>
+  ggplot() +
+  geom_histogram(aes(x = Waveband), binwidth = 10) +
+  facet_wrap(~ Region, scales = 'free_x') +
+  labs(x = 'Waveband (nm)', y = 'Count')
+
+ggsave(here("figures/consensus_histogram.png"), device = "png", dpi = 300)
+
+# results |> 
+#   filter(Method == 'Consensus (GA)') |> 
+#   filter(Region == 'Visible only') |> 
+#   ggplot() +
+#   geom_histogram(aes(x = Waveband), binwidth = 10) +
+#   scale_x_continuous(breaks = seq(400, 700, 20)) +
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+# results |> 
+#   filter(Method == 'Consensus (GA)') |> 
+#   filter(Region == 'All') |> 
+#   ggplot() +
+#   geom_histogram(aes(x = Waveband), binwidth = 10) +
+#   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+I like the faceted single plots, but they don't allow for as detailed labels on the x axis for the "all" regions. Keeping them for now; will go with the others later if needed. 
+
+This shows more of the important patterns, although there's still not a blindingly clear pattern.
+
+I'm very hesitant to recommend specific wavebands down to the nanometer-level precision. At that level, any variation might be more due to noise or stochastic algorithm choices than an actual signal in the data. For instance, 500 is probably essentially identical to 501, so even if both happen to be recommended, practically speaking, it should only count as one waveband. Also, depending on how the bins are calculated behind the scenes for the histogram, they might be in different bins.
 
 
