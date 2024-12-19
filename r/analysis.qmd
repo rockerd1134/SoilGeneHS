@@ -897,7 +897,8 @@ results |>
   geom_hline(yintercept = 1) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
-ggsave(here("figures/method_gene_rmse.png"), device = "png", dpi = 300)
+# ggsave(here("figures/method_gene_rmse.png"), device = "png", dpi = 300)
+# ggsave(here("figures/method_gene_rmse.tiff"), device = "tiff", dpi = 300)
 ```
 
 I like this last figure. There is some occlusion, but overall it works for communicating what method did better for what gene/region. Playing with alpha to address the occlusion just made the plot look worse. Just make sure to adjust the geom_point size as needed for the figure size.
@@ -918,7 +919,8 @@ results |>
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = 'Waveband (nm)')
 
-ggsave(here("figures/bact_baseline_vis_coeffs_bw.png"), device = "png", dpi = 300)
+# ggsave(here("figures/bact_baseline_vis_coeffs_bw.png"), device = "png", dpi = 300)
+# ggsave(here("figures/bact_baseline_vis_coeffs_bw.tiff"), device = "tiff", dpi = 300)
 
 results |> 
   filter(Gene == '16S rRNA') |> 
@@ -932,7 +934,8 @@ results |>
   vis_light_colors +
   labs(x = 'Waveband (nm)')
 
-ggsave(here("figures/bact_baseline_vis_coeffs_color.png"), device = "png", dpi = 300)
+# ggsave(here("figures/bact_baseline_vis_coeffs_color.png"), device = "png", dpi = 300)
+# ggsave(here("figures/bact_baseline_vis_coeffs_color.tiff"), device = "tiff", dpi = 300)
 ```
 
 Not sure which of these is the best. It's the same information throughout though. Decided for points because the line looks bad and is misleading on the consensus coeffs below.
@@ -951,7 +954,8 @@ results |>
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = 'Waveband (nm)')
 
-ggsave(here("figures/bact_consensus_vis_coeffs_bw.png"), device = "png", dpi = 300)
+# ggsave(here("figures/bact_consensus_vis_coeffs_bw.png"), device = "png", dpi = 300)
+# ggsave(here("figures/bact_consensus_vis_coeffs_bw.tiff"), device = "tiff", dpi = 300)
 
 results |> 
   filter(Gene == '16S rRNA') |> 
@@ -965,7 +969,8 @@ results |>
   vis_light_colors +
   labs(x = 'Waveband (nm)')
 
-ggsave(here("figures/bact_consensus_vis_coeffs_color.png"), device = "png", dpi = 300)
+# ggsave(here("figures/bact_consensus_vis_coeffs_color.png"), device = "png", dpi = 300)
+# ggsave(here("figures/bact_consensus_vis_coeffs_color.tiff"), device = "tiff", dpi = 300)
 ```
 
 ```{r}
@@ -976,7 +981,8 @@ results |>
   facet_grid(rows = vars(Gene), cols = vars(Region), scales = 'free_x') +
   labs(x = 'Waveband (nm)', y = 'Count')
 
-ggsave(here("figures/consensus_histogram_gene.png"), device = "png", dpi = 300)
+# ggsave(here("figures/consensus_histogram_gene.png"), device = "png", dpi = 300)
+# ggsave(here("figures/consensus_histogram_gene.tiff"), device = "tiff", dpi = 300)
 
 # results |> 
 #   filter(Method == 'Consensus (GA)') |> 
@@ -1013,7 +1019,8 @@ results |>
   facet_wrap(~ Region, scales = 'free_x') +
   labs(x = 'Waveband (nm)', y = 'Count')
 
-ggsave(here("figures/consensus_histogram.png"), device = "png", dpi = 300)
+# ggsave(here("figures/consensus_histogram.png"), device = "png", dpi = 300)
+# ggsave(here("figures/consensus_histogram.tiff"), device = "tiff", dpi = 300)
 
 # results |> 
 #   filter(Method == 'Consensus (GA)') |> 
