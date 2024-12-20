@@ -118,6 +118,76 @@ preliminary presentation.
 # ggsave(here("figures/data_dist.png"), device = "png", dpi = 300)
 ```
 
+The Pearson correlation matrices are revealing, but they're probably not a good fit for the paper itself. They are commented out because the figures take a long time to run. Uncomment them out as needed.
+
+```{r}
+# corr_matrix <- read_csv(here("data/data_consol.csv"), show_col_types = FALSE) |> 
+#   select(matches("^[0-9]+$")) |> 
+#   cor() |> 
+#   as_tibble() |> 
+#   rowid_to_column(var = 'x') |> 
+#   mutate(x = x + 349) |> 
+#   pivot_longer(
+#     cols = matches("^[0-9]+$"),
+#     names_to = 'y',
+#     values_to = 'corr'
+#   ) |> 
+#   mutate(
+#     y = as.numeric(y),
+#     above9 = corr > 0.9,
+#     above95 = corr > 0.95,
+#     above99 = corr > 0.99,
+#     above999 = corr > 0.999
+#   )
+```
+
+```{r}
+# corr_matrix |> 
+#   ggplot() +
+#   geom_raster(aes(x = x, y = y, fill = corr)) +
+#   scale_fill_distiller(palette = 'YlOrRd', direction = 1) +
+#   labs(title = 'Pearson correlation matrix for hyperspectral wavebands') +
+#   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
+#   scale_y_continuous(breaks = c(350, seq(400, 2500, 100))) +
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
+# 
+# corr_matrix |> 
+#   ggplot() +
+#   geom_raster(aes(x = x, y = y, fill = above9)) +
+#   scale_fill_brewer(palette = 'YlOrRd', direction = 1) +
+#   labs(title = 'Pearson correlation matrix where corr > 0.9') +
+#   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
+#   scale_y_continuous(breaks = c(350, seq(400, 2500, 100)))+
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
+# 
+# corr_matrix |> 
+#   ggplot() +
+#   geom_raster(aes(x = x, y = y, fill = above95)) +
+#   scale_fill_brewer(palette = 'YlOrRd', direction = 1) +
+#   labs(title = 'Pearson correlation matrix where corr > 0.95') +
+#   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
+#   scale_y_continuous(breaks = c(350, seq(400, 2500, 100))) +
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
+# 
+# corr_matrix |> 
+#   ggplot() +
+#   geom_raster(aes(x = x, y = y, fill = above99)) +
+#   scale_fill_brewer(palette = 'YlOrRd', direction = 1) +
+#   labs(title = 'Pearson correlation matrix where corr > 0.99') +
+#   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
+#   scale_y_continuous(breaks = c(350, seq(400, 2500, 100))) +
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
+# 
+# corr_matrix |> 
+#   ggplot() +
+#   geom_raster(aes(x = x, y = y, fill = above999)) +
+#   scale_fill_brewer(palette = 'YlOrRd', direction = 1) +
+#   labs(title = 'Pearson correlation matrix where corr > 0.999') +
+#   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
+#   scale_y_continuous(breaks = c(350, seq(400, 2500, 100))) +
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
 # Prelim figures
 
 Keeping the code for these temporarily as a reference for quicker
