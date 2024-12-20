@@ -20,6 +20,7 @@ library(rlang)
 library(readr)
 library(tidyverse)
 library(ggthemes)
+library(RColorBrewer)
 
 options(scipen = 9)
 knitr::opts_chunk$set(cache = TRUE)
@@ -118,75 +119,78 @@ preliminary presentation.
 # ggsave(here("figures/data_dist.png"), device = "png", dpi = 300)
 ```
 
-The Pearson correlation matrices are revealing, but they're probably not a good fit for the paper itself. They are commented out because the figures take a long time to run. Uncomment them out as needed.
+The Pearson correlation matrix is revealing and indicates one of the major difficulties of this dataset. These blocks are commented out because the figures take a long time to run. Uncomment them out as needed.
 
 ```{r}
-# corr_matrix <- read_csv(here("data/data_consol.csv"), show_col_types = FALSE) |> 
-#   select(matches("^[0-9]+$")) |> 
-#   cor() |> 
-#   as_tibble() |> 
-#   rowid_to_column(var = 'x') |> 
-#   mutate(x = x + 349) |> 
+# corr_matrix <- read_csv(here("data/data_consol.csv"), show_col_types = FALSE) |>
+#   select(matches("^[0-9]+$")) |>
+#   cor() |>
+#   as_tibble() |>
+#   rowid_to_column(var = 'x') |>
+#   mutate(x = x + 349) |>
 #   pivot_longer(
 #     cols = matches("^[0-9]+$"),
 #     names_to = 'y',
 #     values_to = 'corr'
-#   ) |> 
+#   ) |>
 #   mutate(
 #     y = as.numeric(y),
-#     above9 = corr > 0.9,
-#     above95 = corr > 0.95,
-#     above99 = corr > 0.99,
-#     above999 = corr > 0.999
+#     gt999 = corr > 0.999,
+#     gt99 = (corr <= 0.999 & corr > 0.99),
+#     gt95 = (corr <= 0.99 & corr > 0.95),
+#     gt9 = (corr <= 0.95 & corr > 0.9),
+#     gt0 = corr <= 0.9
+#   ) |> 
+#   pivot_longer(
+#     cols = starts_with("gt"),
+#     names_to = "threshold",
+#     values_to = "mask"
+#   ) |> 
+#   filter(mask == TRUE) |> 
+#   select(-mask) |> 
+#   mutate(
+#     threshold = case_when(
+#       threshold == "gt0" ~ "corr <= 0.9",
+#       threshold == "gt9" ~ "0.9 < corr <= 0.95",
+#       threshold == "gt95" ~ "0.95 < corr <= 0.99",
+#       threshold == "gt99" ~ "0.99 < corr <= 0.999",
+#       threshold == "gt999" ~ "corr > 0.999"
+#     ) |> 
+#       factor(
+#         levels = c(
+#           "corr <= 0.9",
+#           "0.9 < corr <= 0.95",
+#           "0.95 < corr <= 0.99",
+#           "0.99 < corr <= 0.999",
+#           "corr > 0.999"
+#         )
+#       )
 #   )
 ```
 
 ```{r}
-# corr_matrix |> 
-#   ggplot() +
-#   geom_raster(aes(x = x, y = y, fill = corr)) +
-#   scale_fill_distiller(palette = 'YlOrRd', direction = 1) +
-#   labs(title = 'Pearson correlation matrix for hyperspectral wavebands') +
-#   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
-#   scale_y_continuous(breaks = c(350, seq(400, 2500, 100))) +
-#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
+# # Make the yellow color transparent
+# YlOrRd <- brewer.pal(5, 'YlOrRd')
+# YlOrRd[1] <- adjustcolor(YlOrRd[1], alpha.f = 0)
 # 
 # corr_matrix |> 
 #   ggplot() +
-#   geom_raster(aes(x = x, y = y, fill = above9)) +
-#   scale_fill_brewer(palette = 'YlOrRd', direction = 1) +
-#   labs(title = 'Pearson correlation matrix where corr > 0.9') +
-#   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
-#   scale_y_continuous(breaks = c(350, seq(400, 2500, 100)))+
-#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
-# 
-# corr_matrix |> 
-#   ggplot() +
-#   geom_raster(aes(x = x, y = y, fill = above95)) +
-#   scale_fill_brewer(palette = 'YlOrRd', direction = 1) +
-#   labs(title = 'Pearson correlation matrix where corr > 0.95') +
+#   geom_raster(aes(x = x, y = y, fill = threshold)) +
 #   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
 #   scale_y_continuous(breaks = c(350, seq(400, 2500, 100))) +
-#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
+#   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+#   scale_fill_manual(values = YlOrRd) +
+#   labs(
+#     x = 'Waveband (nm)',
+#     y = 'Waveband (nm)',
+#     fill = 'Pearson correlation threshold'
+#   )
 # 
-# corr_matrix |> 
-#   ggplot() +
-#   geom_raster(aes(x = x, y = y, fill = above99)) +
-#   scale_fill_brewer(palette = 'YlOrRd', direction = 1) +
-#   labs(title = 'Pearson correlation matrix where corr > 0.99') +
-#   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
-#   scale_y_continuous(breaks = c(350, seq(400, 2500, 100))) +
-#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
-# 
-# corr_matrix |> 
-#   ggplot() +
-#   geom_raster(aes(x = x, y = y, fill = above999)) +
-#   scale_fill_brewer(palette = 'YlOrRd', direction = 1) +
-#   labs(title = 'Pearson correlation matrix where corr > 0.999') +
-#   scale_x_continuous(breaks = c(350, seq(400, 2500, 100))) +
-#   scale_y_continuous(breaks = c(350, seq(400, 2500, 100))) +
-#   theme(axis.text.x = element_text(angle = 60, hjust = 1))
+# ggsave(here("figures/corr.png"), device = "png", dpi = 300)
+# ggsave(here("figures/corr.tiff"), device = "tiff", dpi = 300)
 ```
+
+I like this version way better than the faceted version. It's much easier to read. I will go ahead and generate the figure for the repo, and it will go in the paper if it fits.
 
 # Prelim figures
 
