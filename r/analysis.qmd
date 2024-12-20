@@ -1,9 +1,13 @@
 ---
 title: "RKNGH analysis"
 format: html
+editor: 
+  markdown: 
+    wrap: 72
 ---
 
-This is for analysis of the results in the RKNGH-hyperspectral feature importance study.
+This is for analysis of the results in the RKNGH-hyperspectral feature
+importance study.
 
 # Setup
 
@@ -21,7 +25,8 @@ options(scipen = 9)
 knitr::opts_chunk$set(cache = TRUE)
 ```
 
-Some rows have a `NA` for `Method` and `Waveband`. These represent the baseline models, where no waveband selection methods were applied.
+Some rows have a `NA` for `Method` and `Waveband`. These represent the
+baseline models, where no waveband selection methods were applied.
 
 ```{r}
 results <- read_csv(here("results/results.csv"), show_col_types = FALSE) |> 
@@ -80,7 +85,8 @@ data <- read_csv(here("data/data_consol.csv"), show_col_types = FALSE) |>
   mutate(Waveband = parse_integer(Waveband))
 ```
 
-This is for visualizing what region on the spectrum each wavelength is in:
+This is for visualizing what region on the spectrum each wavelength is
+in:
 
 ```{r}
 vis_light_colors <- binned_scale(
@@ -97,7 +103,8 @@ vis_light_colors <- binned_scale(
 
 # Data distribution
 
-This figure isn't good for the final paper, but it was okay for the preliminary presentation.
+This figure isn't good for the final paper, but it was okay for the
+preliminary presentation.
 
 ```{r}
 # data |> 
@@ -111,10 +118,10 @@ This figure isn't good for the final paper, but it was okay for the preliminary 
 # ggsave(here("figures/data_dist.png"), device = "png", dpi = 300)
 ```
 
-
 # Prelim figures
 
-Keeping the code for these temporarily as a reference for quicker reproduction
+Keeping the code for these temporarily as a reference for quicker
+reproduction
 
 ## RMSE results
 
@@ -187,7 +194,9 @@ Keeping the code for these temporarily as a reference for quicker reproduction
 
 # Analysis
 
-These are based on the full results after running on SCINet. The main differences with the above are the addition of region (visible light only or all wavebands), R2, and MAE.
+These are based on the full results after running on SCINet. The main
+differences with the above are the addition of region (visible light
+only or all wavebands), R2, and MAE.
 
 ## Baseline (all genes)
 
@@ -232,12 +241,17 @@ results |>
   geom_hline(yintercept = 1)
 ```
 
+Whoa, using visible light only actually *decreased* the error for 16S in
+comparison with using the entire spectrum. This is a big result for the
+paper, and it should be emphasized in the manuscript.
 
-Whoa, using visible light only actually *decreased* the error for 16S in comparison with using the entire spectrum. This is a big result for the paper, and it should be emphasized in the manuscript.
+18S did very poorly, as the previous paper and this project's
+preliminary tests suggested. It looks like the hyperspectral-18S pattern
+just isn't there.
 
-18S did very poorly, as the previous paper and this project's preliminary tests suggested. It looks like the hyperspectral-18S pattern just isn't there.
-
-Looks like ureC also did better with vis only, just like 16S. Still underwhelming results there, though. Also underwhelming for phoA and cbbLR.
+Looks like ureC also did better with vis only, just like 16S. Still
+underwhelming results there, though. Also underwhelming for phoA and
+cbbLR.
 
 ## 16S
 
@@ -248,7 +262,6 @@ results |>
   unique()
 ```
 
-
 ```{r}
 results |> 
   filter(Gene == '16S rRNA') |> 
@@ -258,15 +271,24 @@ results |>
   geom_hline(yintercept = 1)
 ```
 
-Clustering was totally ineffective for 16S within the visible light region only, and since PI was based on the clustering, it failed too.
+Clustering was totally ineffective for 16S within the visible light
+region only, and since PI was based on the clustering, it failed too.
 
-It looks like GA had very similar results in both cases, which is really interesting. Maybe they both converged to the same results? Look into this.
+It looks like GA had very similar results in both cases, which is really
+interesting. Maybe they both converged to the same results? Look into
+this.
 
-For the other methods, the vis only results were pretty conclusively better than the all results.
+For the other methods, the vis only results were pretty conclusively
+better than the all results.
 
-Also, the coeffs, GA, and consensus vis results were all similar to the baseline, which also needs looking into.
+Also, the coeffs, GA, and consensus vis results were all similar to the
+baseline, which also needs looking into.
 
-Keep in mind for this whole paper: the consensus method chose far fewer wavebands than the other methods were programmed to or tended to, so naturally the consensus validation model error was a bit higher. The most important thing for consensus is the relative importances assigned via coeffs to the wavebands it chose.
+Keep in mind for this whole paper: the consensus method chose far fewer
+wavebands than the other methods were programmed to or tended to, so
+naturally the consensus validation model error was a bit higher. The
+most important thing for consensus is the relative importances assigned
+via coeffs to the wavebands it chose.
 
 ### GA
 
@@ -277,7 +299,8 @@ results |>
   unique()
 ```
 
-Yeah, their metrics were very close. The minute differences might just be due to the stochastic algorithm.
+Yeah, their metrics were very close. The minute differences might just
+be due to the stochastic algorithm.
 
 ```{r}
 results |> 
@@ -305,7 +328,14 @@ results |>
   scale_color_colorblind()
 ```
 
-This is unexpected though. I thought (hoped) that the GA for all wavebands would have converged to basically the same wavebands as visible only, but that's not the case. I thought maybe the elastic net validation model for vis assigned weights of about 0 to all the picks that didn't line up, but it doesn't look like that's the case either. It might have just been a coincidence, then, although that's a really unsatisfying answer. If there's time later, come back and look into this more.
+This is unexpected though. I thought (hoped) that the GA for all
+wavebands would have converged to basically the same wavebands as
+visible only, but that's not the case. I thought maybe the elastic net
+validation model for vis assigned weights of about 0 to all the picks
+that didn't line up, but it doesn't look like that's the case either. It
+might have just been a coincidence, then, although that's a really
+unsatisfying answer. If there's time later, come back and look into this
+more.
 
 ### Waveband selection results
 
@@ -334,9 +364,12 @@ results |>
   scale_x_continuous(breaks = seq(400, 700, 20))
 ```
 
-Not much agreement here overall. There's some in the ballpark of 580-600, and 670-690 for large peaks, and smaller peaks of agreement around 410, 430-440, 500-510, 540, and 610-620.
+Not much agreement here overall. There's some in the ballpark of
+580-600, and 670-690 for large peaks, and smaller peaks of agreement
+around 410, 430-440, 500-510, 540, and 610-620.
 
-But this was WRT all methods, focusing on vis-all differences. Are there any patterns among the methods?
+But this was WRT all methods, focusing on vis-all differences. Are there
+any patterns among the methods?
 
 ```{r}
 results |> 
@@ -417,13 +450,24 @@ results |>
   vis_light_colors
 ```
 
-Cluster and PI are overlapping pretty hard, but we already knew that since PI is built on clustering results. Wait, it looks like the reason they both did so terribly on vis only is they only chose two wavebands, so of course it would do way worse. But that also indicates that after omitting those two from consideration, visible only outperformed all across the board.
+Cluster and PI are overlapping pretty hard, but we already knew that
+since PI is built on clustering results. Wait, it looks like the reason
+they both did so terribly on vis only is they only chose two wavebands,
+so of course it would do way worse. But that also indicates that after
+omitting those two from consideration, visible only outperformed all
+across the board.
 
-For visible only, MI clearly preferred the red light. Unfortunately, it wasn't among the best methods based on validation results. 
+For visible only, MI clearly preferred the red light. Unfortunately, it
+wasn't among the best methods based on validation results.
 
-Coeffs, GA, and consensus all thought around 440, exactly 509, around 535, and (exactly) 590 was important. The region from 665-670 was also relatively important to all, but especially MI. Around 600 was important particularly to MI, but also coeffs (not that much for GA or consensus).
+Coeffs, GA, and consensus all thought around 440, exactly 509, around
+535, and (exactly) 590 was important. The region from 665-670 was also
+relatively important to all, but especially MI. Around 600 was important
+particularly to MI, but also coeffs (not that much for GA or consensus).
 
-As far as the consensus was concerned, the 3 most important wavebands were all orange light. Green and yellow also did okay. Surprisingly, red wasn't that important to that method.
+As far as the consensus was concerned, the 3 most important wavebands
+were all orange light. Green and yellow also did okay. Surprisingly, red
+wasn't that important to that method.
 
 ```{r}
 results |> 
@@ -490,13 +534,24 @@ results |>
   vis_light_colors
 ```
 
-When considering all, the red focus shifts to around 725 (all methods). But there's a good amount of energy from MI, GA, and coeff around 1450, and there's a very large spike from around 1875-1975 with all four methods contributing some.
+When considering all, the red focus shifts to around 725 (all methods).
+But there's a good amount of energy from MI, GA, and coeff around 1450,
+and there's a very large spike from around 1875-1975 with all four
+methods contributing some.
 
-The consensus method had a strong preference for infrared wavebands, especially around 1900-1950.
+The consensus method had a strong preference for infrared wavebands,
+especially around 1900-1950.
 
-When comparing the magnitude of consensus validation model coefficients between vis and all, vis had a much larger magnitude of its coeffs. I'm not sure to what extent that matters here, though. 
+When comparing the magnitude of consensus validation model coefficients
+between vis and all, vis had a much larger magnitude of its coeffs. I'm
+not sure to what extent that matters here, though.
 
-Update: I thought about it, and I think that's just a function of the number of variables in each model. If both models (all and vis) are trying to predict values in the ballpark of 10, for instance, vis has way fewer wavebands, so they'll have overall higher magnitudes. And vice versa for all. Even though y was scaled (Check this if putting this point in paper or presentation!), the same argument applies.
+Update: I thought about it, and I think that's just a function of the
+number of variables in each model. If both models (all and vis) are
+trying to predict values in the ballpark of 10, for instance, vis has
+way fewer wavebands, so they'll have overall higher magnitudes. And vice
+versa for all. Even though y was scaled (Check this if putting this
+point in paper or presentation!), the same argument applies.
 
 ### Baseline (16S)
 
@@ -522,9 +577,17 @@ results |>
   labs(title = '16S baseline coefficients')
 ```
 
-Looking at the baseline model coefficients for 16S, both all and vis only, since these were among the best overall (and most important since they're for 16S). 16S vis baseline is the most important overall.
+Looking at the baseline model coefficients for 16S, both all and vis
+only, since these were among the best overall (and most important since
+they're for 16S). 16S vis baseline is the most important overall.
 
-One of the key patterns to look for is regions with high oscillation vs pretty steady changes. For instance, look at the red light in vis only for a steady rate of change, or the middle IR section in all. But one interesting pattern going on is that the wavebands with the highest coefficients are in high oscillation areas. I'll need to think on the implications there. Especially in vis light for the purples, what does it mean when one of the highest peaks is right next to the global min?
+One of the key patterns to look for is regions with high oscillation vs
+pretty steady changes. For instance, look at the red light in vis only
+for a steady rate of change, or the middle IR section in all. But one
+interesting pattern going on is that the wavebands with the highest
+coefficients are in high oscillation areas. I'll need to think on the
+implications there. Especially in vis light for the purples, what does
+it mean when one of the highest peaks is right next to the global min?
 
 ## 18S
 
@@ -540,7 +603,9 @@ results |>
   labs(title = '16S and 18S baseline coefficients')
 ```
 
-Wait, I just wanted to compare some good baseline models to bad baseline models. If 18S baseline looks like this, maybe that explains why it's so bad? It looks like it chose L1 penalty over L2.
+Wait, I just wanted to compare some good baseline models to bad baseline
+models. If 18S baseline looks like this, maybe that explains why it's so
+bad? It looks like it chose L1 penalty over L2.
 
 ```{r}
 results |> 
@@ -560,7 +625,12 @@ results |>
   count(zero_coeff)
 ```
 
-Yeah the vast majority of the baseline models for 18S had zero coefficients. But they went through the exact same model training + tuning process as the other ones, and this gave the best results for cross validation, so it's still valid. It's always possible that 18S's poor overall performance is just due to random chance with this train/test split, but that's always the case for any ML thing like this.
+Yeah the vast majority of the baseline models for 18S had zero
+coefficients. But they went through the exact same model training +
+tuning process as the other ones, and this gave the best results for
+cross validation, so it's still valid. It's always possible that 18S's
+poor overall performance is just due to random chance with this
+train/test split, but that's always the case for any ML thing like this.
 
 ```{r}
 results |> 
@@ -584,9 +654,21 @@ Some of this is copied from the above.
 
 ### Validation metrics
 
-These are for comparison, particularly when considering what the consensus method for each gene ranked the best wavebands. If the consensus validation metrics were WAY worse than the others, the rankings should be taken with a grain of salt. All the consensus validation metrics are somewhat worse, but this is somewhat expected: removing features is going to reduce the amount of info in the dataset, increasing prediction error. This is slightly alleviated by the high correlation among wavebands in this data, but the variables aren't completely redundant.
+These are for comparison, particularly when considering what the
+consensus method for each gene ranked the best wavebands. If the
+consensus validation metrics were WAY worse than the others, the
+rankings should be taken with a grain of salt. All the consensus
+validation metrics are somewhat worse, but this is somewhat expected:
+removing features is going to reduce the amount of info in the dataset,
+increasing prediction error. This is slightly alleviated by the high
+correlation among wavebands in this data, but the variables aren't
+completely redundant.
 
-Also going with RMSE for the visualizations here, but that's somewhat arbitrary. As shown below, RMSE and MAE are very highly correlated (intuitively). Ignoring the negative correlation (which is obvious and expected) between RMSE/MAE and R2, the correlation strength is not as strong, but it's still expected due to the bias/variance tradeoff.
+Also going with RMSE for the visualizations here, but that's somewhat
+arbitrary. As shown below, RMSE and MAE are very highly correlated
+(intuitively). Ignoring the negative correlation (which is obvious and
+expected) between RMSE/MAE and R2, the correlation strength is not as
+strong, but it's still expected due to the bias/variance tradeoff.
 
 ```{r}
 results_no_wv <- results |> 
@@ -597,7 +679,6 @@ cor(results_no_wv$RMSE, results_no_wv$R2)
 cor(results_no_wv$RMSE, results_no_wv$MAE)
 cor(results_no_wv$R2, results_no_wv$MAE)
 ```
-
 
 ```{r}
 results_no_wv |> 
@@ -660,10 +741,12 @@ results |>
   scale_color_colorblind()
 ```
 
-Maybe when reporting, discuss clusters, rounded to the nearest 10s place? Approx values below (go back later and correct with exact wavebands chosen):
+Maybe when reporting, discuss clusters, rounded to the nearest 10s
+place? Approx values below (go back later and correct with exact
+wavebands chosen):
 
-For 16S: 510, 540, **590**, 620
-Overall: **620**, **640**, 510, 540, 580, 670, 700 (but especially in the 540-640 range)
+For 16S: 510, 540, **590**, 620 Overall: **620**, **640**, 510, 540,
+580, 670, 700 (but especially in the 540-640 range)
 
 #### All
 
@@ -772,7 +855,8 @@ Overall: **350**, **475-550**
 
 ### Baseline coeffs
 
-The somewhat arbitrary threshold of the top 17 features is because ureC has only 17 nonzero coefficients.
+The somewhat arbitrary threshold of the top 17 features is because ureC
+has only 17 nonzero coefficients.
 
 ```{r}
 results |> 
@@ -872,7 +956,9 @@ results |>
 #   facet_wrap(~ Region)
 ```
 
-This is TMI. There don't appear to be any big surprises in terms of the relationship among RMSE and R2, so it's probably best to just plot one error metric (RMSE probably) and make note of the others if necessary.
+This is TMI. There don't appear to be any big surprises in terms of the
+relationship among RMSE and R2, so it's probably best to just plot one
+error metric (RMSE probably) and make note of the others if necessary.
 
 ```{r}
 # results |> 
@@ -901,9 +987,13 @@ results |>
 # ggsave(here("figures/method_gene_rmse.tiff"), device = "tiff", dpi = 300)
 ```
 
-I like this last figure. There is some occlusion, but overall it works for communicating what method did better for what gene/region. Playing with alpha to address the occlusion just made the plot look worse. Just make sure to adjust the geom_point size as needed for the figure size.
+I like this last figure. There is some occlusion, but overall it works
+for communicating what method did better for what gene/region. Playing
+with alpha to address the occlusion just made the plot look worse. Just
+make sure to adjust the geom_point size as needed for the figure size.
 
-Models of note: 16S baseline vis (lowest RMSE overall), 16S consensus vis (insight into important features)
+Models of note: 16S baseline vis (lowest RMSE overall), 16S consensus
+vis (insight into important features)
 
 16S baseline vis coefficients:
 
@@ -938,9 +1028,12 @@ results |>
 # ggsave(here("figures/bact_baseline_vis_coeffs_color.tiff"), device = "tiff", dpi = 300)
 ```
 
-Not sure which of these is the best. It's the same information throughout though. Decided for points because the line looks bad and is misleading on the consensus coeffs below.
+Not sure which of these is the best. It's the same information
+throughout though. Decided for points because the line looks bad and is
+misleading on the consensus coeffs below.
 
-I think black/white better for paper, but color might be good in a presentation.
+I think black/white better for paper, but color might be good in a
+presentation.
 
 ```{r}
 results |> 
@@ -1010,7 +1103,9 @@ results |>
 #   facet_wrap(~ Gene)
 ```
 
-I prefer the histogram version of this. Main idea: what wavebands tended to be ranked important for each gene by the consensus method. But what about consolidating results among genes?
+I prefer the histogram version of this. Main idea: what wavebands tended
+to be ranked important for each gene by the consensus method. But what
+about consolidating results among genes?
 
 ```{r}
 results |>
@@ -1041,15 +1136,28 @@ results |>
 #   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 ```
 
-I like the faceted single plots, but they don't allow for as detailed labels on the x axis for the "all" regions. Keeping them for now; will go with the others later if needed. 
+I like the faceted single plots, but they don't allow for as detailed
+labels on the x axis for the "all" regions. Keeping them for now; will
+go with the others later if needed.
 
-This shows more of the important patterns, although there's still not a blindingly clear pattern.
+This shows more of the important patterns, although there's still not a
+blindingly clear pattern.
 
-I'm very hesitant to recommend specific wavebands down to the nanometer-level precision. At that level, any variation might be more due to noise or stochastic algorithm choices than an actual signal in the data. For instance, 500 is probably essentially identical to 501, so even if both happen to be recommended, practically speaking, it should only count as one waveband. Also, depending on how the bins are calculated behind the scenes for the histogram, they might be in different bins.
+I'm very hesitant to recommend specific wavebands down to the
+nanometer-level precision. At that level, any variation might be more
+due to noise or stochastic algorithm choices than an actual signal in
+the data. For instance, 500 is probably essentially identical to 501, so
+even if both happen to be recommended, practically speaking, it should
+only count as one waveband. Also, depending on how the bins are
+calculated behind the scenes for the histogram, they might be in
+different bins.
 
 # Tabular analysis of waveband selections
 
-Going in afterwards and looking at the more precise wavebands for the sake of the writeup. The bins here might not match up with the histograms in terms of offsets, but they're good enough to know where to zoom in later.
+Going in afterwards and looking at the more precise wavebands for the
+sake of the writeup. The bins here might not match up with the
+histograms in terms of offsets, but they're good enough to know where to
+zoom in later. This is mostly for the sake of getting more precision on the "All" plots, since they can't have many axis labels.
 
 ```{r}
 results |>
@@ -1071,21 +1179,31 @@ results |>
   labs(x = 'Waveband (nm)', y = 'Count') +
   scale_x_continuous(breaks = seq(400, 2500, 100))
 
-results |>
-  select(Gene, Region, Method, Waveband, Coefficient) |> 
-  filter(Method == 'Consensus (GA)') |> 
-  filter(!near(Coefficient, 0)) |>
-  mutate(
-    bin = (Waveband %/% 10) * 10
-  ) |> 
-  count(bin)
+# results |>
+#   select(Gene, Region, Method, Waveband, Coefficient) |> 
+#   filter(Method == 'Consensus (GA)') |> 
+#   filter(!near(Coefficient, 0)) |>
+#   mutate(
+#     bin = round(Waveband, digits = -1)
+#   ) |> 
+#   count(bin)
 
 results |>
   select(Gene, Region, Method, Waveband, Coefficient) |> 
   filter(Method == 'Consensus (GA)') |>
   filter(!near(Coefficient, 0)) |>
   mutate(
-    bin = (Waveband %/% 10) * 10
+    bin = round(Waveband, digits = -1)
+  ) |>
+  filter(bin < 400) |> 
+  arrange(Waveband)
+
+results |>
+  select(Gene, Region, Method, Waveband, Coefficient) |> 
+  filter(Method == 'Consensus (GA)') |>
+  filter(!near(Coefficient, 0)) |>
+  mutate(
+    bin = round(Waveband, digits = -1)
   ) |>
   filter(bin > 900 & bin < 1100) |> 
   arrange(Waveband)
@@ -1095,9 +1213,9 @@ results |>
   filter(Method == 'Consensus (GA)') |> 
   filter(!near(Coefficient, 0)) |>
   mutate(
-    bin = (Waveband %/% 10) * 10
+    bin = round(Waveband, digits = -1)
   ) |>
-  filter(bin > 1400 & bin < 1650) |> 
+  filter(bin > 1400 & bin < 1660) |> 
   arrange(Waveband)
 
 results |>
@@ -1105,7 +1223,7 @@ results |>
   filter(Method == 'Consensus (GA)') |> 
   filter(!near(Coefficient, 0)) |> 
   mutate(
-    bin = (Waveband %/% 10) * 10
+    bin = round(Waveband, digits = -1)
   ) |>
   filter(bin > 1850 & bin < 1950) |> 
   arrange(Waveband)
@@ -1115,24 +1233,73 @@ results |>
   filter(Method == 'Consensus (GA)') |> 
   filter(!near(Coefficient, 0)) |> 
   mutate(
-    bin = (Waveband %/% 10) * 10
+    bin = round(Waveband, digits = -1)
   ) |>
   filter(bin > 1950 & bin < 2150) |> 
+  arrange(Waveband)
+
+results |>
+  select(Gene, Region, Method, Waveband, Coefficient) |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(!near(Coefficient, 0)) |> 
+  mutate(
+    bin = round(Waveband, digits = -1)
+  ) |>
+  filter(bin > 2150 & bin < 2400) |> 
+  arrange(Waveband)
+
+results |>
+  select(Gene, Region, Method, Waveband, Coefficient) |> 
+  filter(Method == 'Consensus (GA)') |> 
+  filter(Region == 'All') |> 
+  filter(!near(Coefficient, 0)) |> 
+  mutate(
+    bin = round(Waveband, digits = -1)
+  ) |>
+  filter(bin > 400 & bin < 760) |> 
   arrange(Waveband)
 ```
 
 Methodology for analysis here:
-Ignore wavebands with coeffs near 0; their validation model found them unimportant even though the consensus GA selected them.
-Ignore wavebands not near any other selections.
-Take the floor of each waveband selected for analysis (i.e., replace the ones digit with 0)
-Prioritize 16S results, clusters of bins among genes, and runs of bins with the same gene.
 
-Activity at:
-970 (phoA, ureC, 16S)
-1430 (phoA)
-1530-1540 (cbbLR, ureC)
-1620 (cbbLR, 16S)
-1880-1940 (16S)
+-   Ignore wavebands with coeffs near 0; their validation model found
+    them unimportant even though the consensus GA selected them.
+
+-   Ignore wavebands not near any other selections.
+
+-   Ignore results around 350 and 2500 due to questionable data quality
+    around the endpoints.
+
+-   Take the floor of each waveband selected for analysis (i.e., replace
+    the ones digit with 0).
+
+-   Prioritize 16S results, clusters of bins among genes, and runs of
+    bins with the same gene.
+
+All, outside of visible light:
+
+-   970-980 (phoA, ureC, 16S)
+
+-   1440 (phoA)
+
+-   1530-1550 (cbbLR, ureC)
+
+-   **1890-1940 (16S)**
+
+-   2050-2060 (cbbLR, phoA)
+
+All, inside visible light (a little over):
+
+-   430 (cbbLR)
+
+-   510-560 (cbbLR, 16S, phoA, 18S, ureC)
+
+-   700-720 (phoA, 16S)
+
+
+
+
+
 
 
 
