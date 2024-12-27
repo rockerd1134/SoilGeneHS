@@ -1079,7 +1079,7 @@ results |>
   ggplot() +
   geom_point(aes(x = Waveband, y = Coefficient)) +
   geom_hline(yintercept = 0) +
-  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  scale_x_continuous(breaks = seq(400, 700, 20), limits = c(400, 700)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = 'Waveband (nm)')
 
@@ -1093,7 +1093,7 @@ results |>
   ggplot() +
   geom_point(aes(x = Waveband, y = Coefficient, color = Waveband)) +
   geom_hline(yintercept = 0) +
-  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  scale_x_continuous(breaks = seq(400, 700, 20), limits = c(400, 700)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   vis_light_colors +
   labs(x = 'Waveband (nm)')
@@ -1117,7 +1117,7 @@ results |>
   ggplot() +
   geom_point(aes(x = Waveband, y = Coefficient)) +
   geom_hline(yintercept = 0) +
-  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  scale_x_continuous(breaks = seq(400, 700, 20), limits = c(400, 700)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = 'Waveband (nm)')
 
@@ -1131,7 +1131,7 @@ results |>
   ggplot() +
   geom_point(aes(x = Waveband, y = Coefficient, color = Waveband)) +
   geom_hline(yintercept = 0) +
-  scale_x_continuous(breaks = seq(400, 700, 20)) +
+  scale_x_continuous(breaks = seq(400, 700, 20), limits = c(400, 700)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   vis_light_colors +
   labs(x = 'Waveband (nm)')
