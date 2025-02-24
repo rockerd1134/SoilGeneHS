@@ -1,10 +1,19 @@
 # SoilGeneHS 
 
-This is the repository for *Ensemble feature selection of cotton hyperspectral reflectance to predict soil health genes* (under review).
+This is the repository for *Ensemble feature selection of cotton hyperspectral reflectance to predict soil health genes*.
 
-## Abstract
+## Manuscript info
 
-Monitoring soil microbiome metrics is currently costly and low-throughput. However, by measuring hyperspectral reflectance of cotton (*Gossypium hirsutum*), machine learning models can predict abundance levels for certain genes in the adjacent soil, increasing throughput. In this study, the prediction capabilities of elastic net models were measured for five soil health genes (16S rRNA, 18S rRNA, *pho*A, *cbb*LR, and *ure*C) using cotton hyperspectral reflectance values from 350-2500 nm. *pho*A, *cbb*LR, and *ure*C were partially predictable, but 18S rRNA was not predictable using this methodology. 16S rRNA, though, was consistently predictable using hyperspectral data. Knowing which regions of the spectrum are most influential for predicting gene levels can reduce data size, improve future modeling, and depending on the region, allow more accessible sensors. To find the important regions, this study tested five feature selection methods: mutual information, agglomerative clustering, embedded linear coefficients, permutation importance, and genetic algorithms (both standalone and on the results of the other methods). No method gave consistently superior or inferior results for all genes, but the methods tended to select wavebands from the visible light regions (particularly yellow-orange light) over infrared regions. Additionally, this study demonstrated that restricting wavebands to visible light improved the model predicting 16S rRNA (RMSE = 0.724, MAE = 0.576, R^2^ = 0.501 on the standardized variable). The results suggest that infrared wavebands are less important than visible light wavebands in predicting soil microbiome genes, allowing future studies to use more accessible sensors.
+### Abstract
+
+Monitoring soil microbiome metrics is currently costly and low-throughput. However, by measuring hyperspectral reflectance of cotton (*Gossypium hirsutum*), machine learning models can predict abundance levels for certain genes in the adjacent soil, increasing throughput. In this study, the prediction capabilities of elastic net models were measured for five soil health genes (16S rRNA, 18S rRNA, *pho*A, *cbb*LR, and *ure*C) using cotton hyperspectral reflectance values from 350-2500 nm. *pho*A, *cbb*LR, and *ure*C were partially predictable, but 18S rRNA was not predictable using this methodology. 16S rRNA, though, was consistently predictable using hyperspectral data. Knowing which regions of the spectrum are most influential for predicting gene levels can reduce data size, improve future modeling, and depending on the region, allow more accessible sensors. To find the important regions, this study tested five feature selection methods: mutual information, agglomerative clustering, embedded linear coefficients, permutation importance, and genetic algorithms (both standalone and on the results of the other methods). No method gave consistently superior or inferior results for all genes, but the methods tended to select wavebands from the visible light regions (particularly yellow-orange light) over infrared regions. Additionally, this study demonstrated that restricting wavebands to visible light improved the model predicting 16S rRNA (RMSE = 0.724, MAE = 0.576, R<sup>2</sup> = 0.501 on the standardized variable). The results suggest that infrared wavebands are less important than visible light wavebands in predicting soil microbiome genes, allowing future studies to use more accessible sensors.
+
+### Authors
+
+- [Josh Waldbieser](https://orcid.org/0009-0003-5652-0806)
+- [Rocker D'Antonio](https://orcid.org/0009-0001-8444-1772)
+- [Martin J. Wubben](https://orcid.org/0000-0002-8056-0272)
+- [John P. Brooks](https://orcid.org/0000-0002-6142-6430)
 
 ## Repo directory structure
 
