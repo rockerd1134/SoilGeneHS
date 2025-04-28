@@ -1,6 +1,6 @@
 # SoilGeneHS 
 
-This is the repository for *Ensemble feature selection of cotton hyperspectral reflectance to predict soil health genes*.
+This is the repository for [Ensemble feature selection of cotton hyperspectral reflectance to predict soil health genes](https://doi.org/10.1109/southeastcon56624.2025.10971625).
 
 ## Manuscript info
 
